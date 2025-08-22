@@ -164,6 +164,10 @@ public class FollowController {
             @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId) {
         
+        // 调试日志：查看原始参数值
+        log.info("原始参数 - followerIdUnderscore: {}, followerIdCamel: {}, followeeId: {}, followedId: {}", 
+                 followerIdUnderscore, followerIdCamel, followeeId, followedId);
+        
         // 参数兼容性处理：支持下划线和驼峰两种格式
         Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
         
