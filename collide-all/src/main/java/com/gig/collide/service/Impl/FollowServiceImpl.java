@@ -137,19 +137,33 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     public boolean checkFollowStatus(Long followerId, Long followeeId) {
+        log.debug("检查关注状态: followerId={}, followeeId={}", followerId, followeeId);
+        
+        // 参数验证
         if (followerId == null || followeeId == null) {
+            log.warn("检查关注状态参数不完整: followerId={}, followeeId={}", followerId, followeeId);
             return false;
         }
-        return followMapper.checkFollowExists(followerId, followeeId, "active");
+        
+        try {
+            LambdaQueryWrapper<Follow> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Follow::getFollowerId, followerId)
+                       .eq(Follow::getFolloweeId, followeeId)
+                       .eq(Follow::getStatus, "active");
+            
+            long count = followMapper.selectCount(queryWrapper);
+            boolean isFollowed = count > 0;
+            
+            log.debug("关注状态检查结果: followerId={}, followeeId={}, isFollowed={}", 
+                     followerId, followeeId, isFollowed);
+            return isFollowed;
+            
+        } catch (Exception e) {
+            log.error("检查关注状态时发生异常: followerId={}, followeeId={}", followerId, followeeId, e);
+            return false;
+        }
     }
 
-    @Override
-    public Follow getFollowRelation(Long followerId, Long followeeId) {
-        if (followerId == null || followeeId == null) {
-            return null;
-        }
-        return followMapper.findByFollowerAndFollowee(followerId, followeeId, "active");
-    }
 
     @Override
     public IPage<Follow> queryFollows(Integer currentPage, Integer pageSize, Long followerId, Long followeeId,
@@ -266,19 +280,7 @@ public class FollowServiceImpl implements FollowService {
         return followMapper.getUserFollowStatistics(userId);
     }
 
-    @Override
-    public Map<Long, Boolean> batchCheckFollowStatus(Long followerId, List<Long> followeeIds) {
-        if (followerId == null || followeeIds == null || followeeIds.isEmpty()) {
-            return new HashMap<>();
-        }
 
-        List<Map<String, Object>> results = followMapper.batchCheckFollowStatus(followerId, followeeIds, "active");
-
-        return results.stream().collect(Collectors.toMap(
-                result -> Long.valueOf(result.get("followeeId").toString()),
-                result -> Integer.valueOf(result.get("isFollowing").toString()) > 0
-        ));
-    }
 
     @Override
     public IPage<Follow> searchByNickname(Long followerId, Long followeeId, String nicknameKeyword,
@@ -517,34 +519,7 @@ public class FollowServiceImpl implements FollowService {
         }
     }
 
-    @Override
-    public boolean checkFollowStatus(Long followerId, Long followeeId) {
-        log.debug("检查关注状态: followerId={}, followeeId={}", followerId, followeeId);
-        
-        // 参数验证
-        if (followerId == null || followeeId == null) {
-            log.warn("检查关注状态参数不完整: followerId={}, followeeId={}", followerId, followeeId);
-            return false;
-        }
-        
-        try {
-            LambdaQueryWrapper<Follow> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Follow::getFollowerId, followerId)
-                       .eq(Follow::getFolloweeId, followeeId)
-                       .eq(Follow::getStatus, "active");
-            
-            long count = followMapper.selectCount(queryWrapper);
-            boolean isFollowed = count > 0;
-            
-            log.debug("关注状态检查结果: followerId={}, followeeId={}, isFollowed={}", 
-                     followerId, followeeId, isFollowed);
-            return isFollowed;
-            
-        } catch (Exception e) {
-            log.error("检查关注状态时发生异常: followerId={}, followeeId={}", followerId, followeeId, e);
-            return false;
-        }
-    }
+
 
     @Override
     public Map<Long, Boolean> batchCheckFollowStatus(Long followerId, List<Long> followeeIds) {
