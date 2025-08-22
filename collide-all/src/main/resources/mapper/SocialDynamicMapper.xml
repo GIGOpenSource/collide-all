@@ -256,6 +256,14 @@
         WHERE id = #{dynamicId}
     </update>
 
+    <!-- 减少评论数 -->
+    <update id="decreaseCommentCount">
+        UPDATE t_social_dynamic
+        SET comment_count = GREATEST(comment_count - 1, 0),
+            update_time = NOW()
+        WHERE id = #{dynamicId}
+    </update>
+
     <!-- 增加分享数 -->
     <update id="increaseShareCount">
         UPDATE t_social_dynamic

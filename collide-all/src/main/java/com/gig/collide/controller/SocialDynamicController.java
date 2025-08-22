@@ -229,6 +229,7 @@ public class SocialDynamicController {
     public Result<SocialDynamicResponse> getDynamicById(
             @Parameter(description = "动态ID") @PathVariable(required = false) Long dynamicId,
             @Parameter(description = "动态ID（查询参数）") @RequestParam(required = false) Long dynamic_id,
+            @Parameter(description = "当前用户ID（用于获取互动状态）") @RequestParam(required = false) Long currentUserId,
             @Parameter(description = "是否包含已删除") @RequestParam(defaultValue = "false") Boolean includeDeleted) {
         
         // 优先使用路径参数，如果没有则使用查询参数
@@ -238,8 +239,8 @@ public class SocialDynamicController {
             return Result.error("动态ID不能为空");
         }
         
-        log.info("REST请求 - 查询动态详情: 动态ID={}, 包含已删除={}", finalDynamicId, includeDeleted);
-        return socialService.getDynamicById(finalDynamicId, includeDeleted);
+        log.info("REST请求 - 查询动态详情: 动态ID={}, 当前用户ID={}, 包含已删除={}", finalDynamicId, currentUserId, includeDeleted);
+        return socialService.getDynamicById(finalDynamicId, currentUserId, includeDeleted);
     }
 
     /**

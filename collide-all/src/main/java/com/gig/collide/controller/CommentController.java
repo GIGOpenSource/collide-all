@@ -52,6 +52,7 @@ public class CommentController {
             @Parameter(description = "评论类型") @RequestParam(required = false) String commentType,
             @Parameter(description = "目标ID") @RequestParam(required = false) Long targetId,
             @Parameter(description = "用户ID") @RequestParam(required = false) Long userId,
+            @Parameter(description = "当前用户ID（用于获取点赞状态）") @RequestParam(required = false) Long currentUserId,
             @Parameter(description = "父评论ID") @RequestParam(required = false) Long parentId,
             @Parameter(description = "评论状态") @RequestParam(required = false) String status,
             @Parameter(description = "关键词搜索") @RequestParam(required = false) String keyword,
@@ -59,9 +60,9 @@ public class CommentController {
             @Parameter(description = "排序方向") @RequestParam(defaultValue = "DESC") String orderDirection,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 评论列表查询: type={}, targetId={}, userId={}, page={}/{}", 
-                commentType, targetId, userId, currentPage, pageSize);
-        return commentService.listCommentsForController(commentType, targetId, userId, parentId, status, keyword,
+        log.info("REST请求 - 评论列表查询: type={}, targetId={}, userId={}, currentUserId={}, page={}/{}", 
+                commentType, targetId, userId, currentUserId, currentPage, pageSize);
+        return commentService.listCommentsForController(commentType, targetId, userId, currentUserId, parentId, status, keyword,
                 orderBy, orderDirection, currentPage, pageSize);
     }
 

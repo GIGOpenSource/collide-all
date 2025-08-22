@@ -299,6 +299,17 @@ public class SocialDynamicServiceImpl implements SocialDynamicService {
 
     @Override
     @Transactional
+    public int decreaseCommentCount(Long dynamicId, Long operatorId) {
+        log.debug("减少评论数: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
+        int result = socialDynamicMapper.decreaseCommentCount(dynamicId);
+        if (result > 0) {
+            log.info("评论数减少成功: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
+        }
+        return result;
+    }
+
+    @Override
+    @Transactional
     public int increaseShareCount(Long dynamicId, Long operatorId) {
         log.debug("增加分享数: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
         int result = socialDynamicMapper.increaseShareCount(dynamicId);

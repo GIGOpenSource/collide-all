@@ -160,6 +160,12 @@ public interface SocialDynamicMapper extends BaseMapper<SocialDynamic> {
     int increaseCommentCount(@Param("dynamicId") Long dynamicId);
 
     /**
+     * 减少评论数
+     * 使用PRIMARY KEY索引
+     */
+    int decreaseCommentCount(@Param("dynamicId") Long dynamicId);
+
+    /**
      * 增加分享数
      * 使用PRIMARY KEY索引
      */

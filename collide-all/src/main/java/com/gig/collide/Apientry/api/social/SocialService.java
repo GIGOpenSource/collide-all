@@ -60,7 +60,7 @@ public interface SocialService {
     /**
      * 根据ID查询动态详情
      */
-    Result<SocialDynamicResponse> getDynamicById(Long dynamicId, Boolean includeDeleted);
+    Result<SocialDynamicResponse> getDynamicById(Long dynamicId, Long currentUserId, Boolean includeDeleted);
 
     /**
      * 分页查询动态列表

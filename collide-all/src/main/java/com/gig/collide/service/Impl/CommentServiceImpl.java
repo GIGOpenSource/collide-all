@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.domain.Comment;
 import com.gig.collide.mapper.CommentMapper;
 import com.gig.collide.service.CommentService;
+import com.gig.collide.service.SocialDynamicService;
+import com.gig.collide.service.LikeService;
+import com.gig.collide.cache.LikeCacheConstant;
 import com.gig.collide.Apientry.api.common.response.Result;
 import com.gig.collide.Apientry.api.common.response.PageResponse;
 import com.gig.collide.Apientry.api.comment.response.CommentResponse;
@@ -33,6 +36,8 @@ import java.util.ArrayList;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentMapper commentMapper;
+    private final SocialDynamicService socialDynamicService;
+    private final LikeService likeService;
 
     // =================== 基础CRUD ===================
 
@@ -59,6 +64,18 @@ public class CommentServiceImpl implements CommentService {
         // 如果是回复评论，更新父评论的回复数
         if (comment.getParentCommentId() != null && comment.getParentCommentId() > 0) {
             commentMapper.increaseReplyCount(comment.getParentCommentId(), 1);
+        }
+
+        // 如果是对动态的评论，更新动态的评论数量
+        if ("DYNAMIC".equalsIgnoreCase(comment.getCommentType()) && comment.getTargetId() != null) {
+            try {
+                socialDynamicService.increaseCommentCount(comment.getTargetId(), comment.getUserId());
+                log.info("动态评论数量更新成功: dynamicId={}, commentId={}", comment.getTargetId(), comment.getId());
+            } catch (Exception e) {
+                log.error("更新动态评论数量失败: dynamicId={}, commentId={}, error={}", 
+                         comment.getTargetId(), comment.getId(), e.getMessage(), e);
+                // 注意：这里不抛出异常，避免因为统计更新失败导致评论创建失败
+            }
         }
 
         log.info("评论创建成功: {}", comment.getId());
@@ -121,6 +138,18 @@ public class CommentServiceImpl implements CommentService {
         // 如果是回复评论，减少父评论的回复数
         if (comment.getParentCommentId() != null && comment.getParentCommentId() > 0) {
             commentMapper.increaseReplyCount(comment.getParentCommentId(), -1);
+        }
+
+        // 如果是对动态的评论，减少动态的评论数量
+        if ("DYNAMIC".equalsIgnoreCase(comment.getCommentType()) && comment.getTargetId() != null) {
+            try {
+                socialDynamicService.decreaseCommentCount(comment.getTargetId(), userId);
+                log.info("动态评论数量减少成功: dynamicId={}, commentId={}", comment.getTargetId(), commentId);
+            } catch (Exception e) {
+                log.error("减少动态评论数量失败: dynamicId={}, commentId={}, error={}", 
+                         comment.getTargetId(), commentId, e.getMessage(), e);
+                // 注意：这里不抛出异常，避免因为统计更新失败导致评论删除失败
+            }
         }
 
         log.info("评论删除成功: {}", commentId);
@@ -599,7 +628,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public Result<PageResponse<CommentResponse>> listCommentsForController(
-            String commentType, Long targetId, Long userId, Long parentId, String status, String keyword,
+            String commentType, Long targetId, Long userId, Long currentUserId, Long parentId, String status, String keyword,
             String orderBy, String orderDirection, Integer currentPage, Integer pageSize) {
         
         log.info("Controller请求 - 评论列表查询: type={}, targetId={}, userId={}, parentId={}, status={}, keyword={}, orderBy={}, orderDirection={}, page={}/{}",
@@ -626,9 +655,9 @@ public class CommentServiceImpl implements CommentService {
             // 调用Mapper查询
             IPage<Comment> commentPage = commentMapper.selectCommentList(page, commentType, targetId, userId, parentId, status, keyword, orderBy, orderDirection);
             
-            // 转换为Response对象
+            // 转换为Response对象，包含点赞状态
             List<CommentResponse> responses = commentPage.getRecords().stream()
-                    .map(this::convertToResponse)
+                    .map(comment -> convertToResponseWithLikeStatus(comment, currentUserId))
                     .toList();
             
             // 构建分页响应
@@ -676,6 +705,37 @@ public class CommentServiceImpl implements CommentService {
         response.setChildren(new ArrayList<>());
         response.setLevel(0);
         response.setCommentPath(String.valueOf(comment.getId()));
+        
+        return response;
+    }
+
+    /**
+     * 将Comment实体转换为CommentResponse，包含当前用户的点赞状态
+     */
+    private CommentResponse convertToResponseWithLikeStatus(Comment comment, Long currentUserId) {
+        if (comment == null) {
+            return null;
+        }
+        
+        // 先使用基础转换方法
+        CommentResponse response = convertToResponse(comment);
+        
+        // 如果提供了当前用户ID，则获取点赞状态
+        if (currentUserId != null) {
+            try {
+                // 获取点赞状态
+                boolean isLiked = likeService.checkLikeStatus(currentUserId, LikeCacheConstant.LIKE_TYPE_COMMENT, comment.getId());
+                response.setIsLiked(isLiked);
+                log.debug("获取评论点赞状态: commentId={}, userId={}, isLiked={}", comment.getId(), currentUserId, isLiked);
+            } catch (Exception e) {
+                log.warn("获取评论点赞状态失败: commentId={}, userId={}, error={}", 
+                        comment.getId(), currentUserId, e.getMessage(), e);
+                response.setIsLiked(false);
+            }
+        } else {
+            // 如果没有提供当前用户ID（未登录状态），则设置为false
+            response.setIsLiked(false);
+        }
         
         return response;
     }

@@ -100,6 +100,11 @@ public class CommentResponse implements Serializable {
      */
     private Integer replyCount;
 
+    /**
+     * 当前用户是否点赞过此评论
+     */
+    private Boolean isLiked;
+
     // =================== 时间字段 ===================
 
     /**

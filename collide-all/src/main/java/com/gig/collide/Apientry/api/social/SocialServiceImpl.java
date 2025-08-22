@@ -184,9 +184,9 @@ public class SocialServiceImpl implements SocialService {
     }
 
     @Override
-    public Result<SocialDynamicResponse> getDynamicById(Long dynamicId, Boolean includeDeleted) {
+    public Result<SocialDynamicResponse> getDynamicById(Long dynamicId, Long currentUserId, Boolean includeDeleted) {
         try {
-            log.debug("门面服务 - 查询动态详情: 动态ID={}, 包含已删除={}", dynamicId, includeDeleted);
+            log.debug("门面服务 - 查询动态详情: 动态ID={}, 当前用户ID={}, 包含已删除={}", dynamicId, currentUserId, includeDeleted);
             
             SocialDynamic dynamic = socialDynamicService.selectById(dynamicId);
             if (dynamic == null) {
@@ -198,7 +198,8 @@ public class SocialServiceImpl implements SocialService {
                 return Result.error("动态已删除");
             }
             
-            SocialDynamicResponse response = convertToResponse(dynamic);
+            // 使用包含互动状态的转换方法，传入当前用户ID
+            SocialDynamicResponse response = convertToResponseWithInteractionStatus(dynamic, currentUserId);
             return Result.success(response);
         } catch (Exception e) {
             log.error("查询动态详情失败: {}", e.getMessage(), e);

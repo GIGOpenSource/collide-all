@@ -135,6 +135,12 @@ public interface SocialDynamicService {
     int increaseCommentCount(Long dynamicId, Long operatorId);
 
     /**
+     * 减少评论数
+     * 对应Mapper: decreaseCommentCount
+     */
+    int decreaseCommentCount(Long dynamicId, Long operatorId);
+
+    /**
      * 增加分享数
      * 对应Mapper: increaseShareCount
      */

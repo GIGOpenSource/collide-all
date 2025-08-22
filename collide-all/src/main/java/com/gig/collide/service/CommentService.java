@@ -332,6 +332,6 @@ public interface CommentService {
      * @return 分页响应结果
      */
     Result<PageResponse<CommentResponse>> listCommentsForController(
-            String commentType, Long targetId, Long userId, Long parentId, String status, String keyword,
+            String commentType, Long targetId, Long userId, Long currentUserId, Long parentId, String status, String keyword,
             String orderBy, String orderDirection, Integer currentPage, Integer pageSize);
 }
