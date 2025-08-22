@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.time.LocalDateTime;
 
 /**
  * 用户互动管理控制器
@@ -39,9 +43,33 @@ public class UserInteractionController {
 
     /**
      * 获取用户所有互动信息
+     * 按时间倒序返回统一的互动列表，前端根据type字段区分互动类型
+     * 
+     * 返回格式：
+     * {
+     *   "interactions": {
+     *     "records": [
+     *       {
+     *         "id": 123,
+     *         "type": "LIKE|FAVORITE|FOLLOW",
+     *         "likeType": "CONTENT|COMMENT|DYNAMIC",     // type=LIKE时
+     *         "favoriteType": "CONTENT|GOODS",           // type=FAVORITE时
+     *         "targetId": 456,
+     *         "targetTitle": "标题",
+     *         "createTime": "2024-08-22T15:30:00",
+     *         "status": "active",
+     *         // ...其他字段根据type不同而不同
+     *       }
+     *     ],
+     *     "total": 45,
+     *     "currentPage": 1,
+     *     "pageSize": 20
+     *   },
+     *   "statistics": { "totalLikes": 25, "totalFavorites": 12, ... }
+     * }
      */
     @GetMapping("/all")
-    @Operation(summary = "获取用户所有互动", description = "获取用户的点赞、收藏、关注等互动信息")
+    @Operation(summary = "获取用户所有互动", description = "获取用户的点赞、收藏、关注等互动信息，按时间倒序排列")
     public Result<Map<String, Object>> getAllUserInteractions(
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
@@ -50,38 +78,104 @@ public class UserInteractionController {
         try {
             log.info("REST请求 - 获取用户所有互动: userId={}, page={}/{}", userId, currentPage, pageSize);
             
-            Map<String, Object> result = new HashMap<>();
+            // 为了获取完整的时间排序，需要获取足够多的数据
+            // 这里设置一个较大的数量来获取更多数据用于排序
+            int fetchSize = Math.max(pageSize * 10, 100); // 至少获取100条，或者页面大小的10倍
+            
+            List<Map<String, Object>> allInteractions = new ArrayList<>();
             
             // 获取用户点赞列表
             try {
-                IPage<Like> likePage = likeService.findUserLikes(currentPage, pageSize, userId, null, "active");
-                result.put("likes", likePage);
+                IPage<Like> likePage = likeService.findUserLikes(1, fetchSize, userId, null, "active");
+                for (Like like : likePage.getRecords()) {
+                    Map<String, Object> interaction = new HashMap<>();
+                    interaction.put("id", like.getId());
+                    interaction.put("type", "LIKE");
+                    interaction.put("likeType", like.getLikeType()); // CONTENT, COMMENT, DYNAMIC等
+                    interaction.put("targetId", like.getTargetId());
+                    interaction.put("targetTitle", like.getTargetTitle());
+                    interaction.put("targetAuthorId", like.getTargetAuthorId());
+                    interaction.put("createTime", like.getCreateTime());
+                    interaction.put("status", like.getStatus());
+                    allInteractions.add(interaction);
+                }
                 log.debug("用户点赞数据获取成功: 总数={}", likePage.getTotal());
             } catch (Exception e) {
                 log.warn("获取用户点赞数据失败: userId={}", userId, e);
-                result.put("likes", null);
             }
             
             // 获取用户收藏列表  
             try {
-                IPage<Favorite> favoritePage = favoriteService.getUserFavorites(userId, null, currentPage, pageSize);
-                result.put("favorites", favoritePage);
+                IPage<Favorite> favoritePage = favoriteService.getUserFavorites(userId, null, 1, fetchSize);
+                for (Favorite favorite : favoritePage.getRecords()) {
+                    Map<String, Object> interaction = new HashMap<>();
+                    interaction.put("id", favorite.getId());
+                    interaction.put("type", "FAVORITE");
+                    interaction.put("favoriteType", favorite.getFavoriteType()); // CONTENT, GOODS等
+                    interaction.put("targetId", favorite.getTargetId());
+                    interaction.put("targetTitle", favorite.getTargetTitle());
+                    interaction.put("targetCover", favorite.getTargetCover());
+                    interaction.put("targetAuthorId", favorite.getTargetAuthorId());
+                    interaction.put("createTime", favorite.getCreateTime());
+                    interaction.put("status", favorite.getStatus());
+                    allInteractions.add(interaction);
+                }
                 log.debug("用户收藏数据获取成功: 总数={}", favoritePage.getTotal());
             } catch (Exception e) {
                 log.warn("获取用户收藏数据失败: userId={}", userId, e);
-                result.put("favorites", null);
             }
             
             // 获取用户关注列表
             try {
-                // 注意：这里假设有getUserFollows方法，如果没有需要使用其他查询方法
-                Map<String, Object> followData = getFollowData(userId, currentPage, pageSize);
-                result.put("follows", followData);
-                log.debug("用户关注数据获取成功");
+                IPage<Follow> followingPage = followService.getFollowing(userId, 1, fetchSize);
+                for (Follow follow : followingPage.getRecords()) {
+                    Map<String, Object> interaction = new HashMap<>();
+                    interaction.put("id", follow.getId());
+                    interaction.put("type", "FOLLOW");
+                    interaction.put("followerId", follow.getFollowerId());
+                    interaction.put("followeeId", follow.getFolloweeId());
+                    interaction.put("followeeNickname", follow.getFolloweeNickname());
+                    interaction.put("followeeAvatar", follow.getFolloweeAvatar());
+                    interaction.put("createTime", follow.getCreateTime());
+                    interaction.put("status", follow.getStatus());
+                    allInteractions.add(interaction);
+                }
+                log.debug("用户关注数据获取成功: 总数={}", followingPage.getTotal());
             } catch (Exception e) {
                 log.warn("获取用户关注数据失败: userId={}", userId, e);
-                result.put("follows", null);
             }
+            
+            // 按创建时间倒序排序（最新的在前）
+            allInteractions.sort((a, b) -> {
+                LocalDateTime timeA = (LocalDateTime) a.get("createTime");
+                LocalDateTime timeB = (LocalDateTime) b.get("createTime");
+                if (timeA == null && timeB == null) return 0;
+                if (timeA == null) return 1;
+                if (timeB == null) return -1;
+                return timeB.compareTo(timeA); // 倒序：新的在前
+            });
+            
+            // 应用分页
+            int totalSize = allInteractions.size();
+            int startIndex = (currentPage - 1) * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, totalSize);
+            
+            List<Map<String, Object>> pagedInteractions = new ArrayList<>();
+            if (startIndex < totalSize) {
+                pagedInteractions = allInteractions.subList(startIndex, endIndex);
+            }
+            
+            // 构建返回结果
+            Map<String, Object> result = new HashMap<>();
+            
+            // 分页的互动列表
+            Map<String, Object> pageInfo = new HashMap<>();
+            pageInfo.put("records", pagedInteractions);
+            pageInfo.put("total", totalSize);
+            pageInfo.put("currentPage", currentPage);
+            pageInfo.put("pageSize", pageSize);
+            pageInfo.put("totalPages", (int) Math.ceil((double) totalSize / pageSize));
+            result.put("interactions", pageInfo);
             
             // 统计信息
             Map<String, Long> statistics = new HashMap<>();
@@ -100,11 +194,9 @@ public class UserInteractionController {
             }
             
             try {
-                // 获取用户关注数（用户关注了多少人）
                 Long followingCount = followService.getFollowingCount(userId);
                 statistics.put("totalFollowing", followingCount);
                 
-                // 获取用户粉丝数（多少人关注了用户）
                 Long followersCount = followService.getFollowersCount(userId);
                 statistics.put("totalFollowers", followersCount);
             } catch (Exception e) {
@@ -115,7 +207,8 @@ public class UserInteractionController {
             
             result.put("statistics", statistics);
             
-            log.info("用户互动信息获取成功: userId={}, 统计={}", userId, statistics);
+            log.info("用户互动信息获取成功: userId={}, 总互动数={}, 当前页数据量={}, 统计={}", 
+                    userId, totalSize, pagedInteractions.size(), statistics);
             return Result.success(result);
             
         } catch (Exception e) {
