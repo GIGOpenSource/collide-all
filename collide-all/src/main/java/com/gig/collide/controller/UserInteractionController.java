@@ -8,8 +8,12 @@ import com.gig.collide.domain.Follow;
 import com.gig.collide.service.LikeService;
 import com.gig.collide.service.FavoriteService;
 import com.gig.collide.service.FollowService;
+import com.gig.collide.service.CommentService;
+import com.gig.collide.service.ContentService;
 import com.gig.collide.mapper.UserMapper;
 import com.gig.collide.domain.User;
+import com.gig.collide.domain.Comment;
+import com.gig.collide.domain.Content;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,6 +48,8 @@ public class UserInteractionController {
     private final LikeService likeService;
     private final FavoriteService favoriteService;
     private final FollowService followService;
+    private final CommentService commentService;
+    private final ContentService contentService;
     private final UserMapper userMapper;
 
     /**
@@ -56,9 +62,12 @@ public class UserInteractionController {
      *     "records": [
      *       {
      *         "id": 123,
-     *         "type": "LIKE|FAVORITE|FOLLOW",
+     *         "type": "LIKE|FAVORITE|FOLLOW|COMMENT",
      *         "likeType": "CONTENT|COMMENT|DYNAMIC",     // type=LIKE时
      *         "favoriteType": "CONTENT|GOODS",           // type=FAVORITE时
+     *         "interactionType": "COMMENT",               // type=COMMENT时
+     *         "subType": "CONTENT|DYNAMIC",               // type=COMMENT时
+     *         "commentContent": "评论内容",               // type=COMMENT时
      *         "targetId": 456,
      *         "targetTitle": "标题",
      *         "targetAuthorId": 789,
@@ -152,6 +161,111 @@ public class UserInteractionController {
                 log.warn("获取用户关注数据失败: userId={}", userId, e);
             }
             
+            // 获取用户评论列表
+            try {
+                // 查询用户的评论数据
+                var commentsResult = commentService.listCommentsForController(
+                    null, null, userId, userId, null, "active", null, 
+                    "createTime", "DESC", 1, fetchSize
+                );
+                
+                if (commentsResult.getCode() == 200 && commentsResult.getData() != null) {
+                    var commentPage = commentsResult.getData();
+                    for (var commentResponse : commentPage.getRecords()) {
+                        Map<String, Object> interaction = new HashMap<>();
+                        interaction.put("id", commentResponse.getId());
+                        interaction.put("type", "COMMENT");
+                        interaction.put("interactionType", "COMMENT");
+                        interaction.put("subType", commentResponse.getCommentType()); // CONTENT, DYNAMIC等
+                        interaction.put("commentType", true);
+                        interaction.put("commentContent", commentResponse.getContent());
+                        interaction.put("targetId", commentResponse.getTargetId());
+                        interaction.put("parentCommentId", commentResponse.getParentCommentId() != null ? commentResponse.getParentCommentId() : 0);
+                        interaction.put("replyToUserId", commentResponse.getReplyToUserId());
+                        interaction.put("replyToUserNickname", commentResponse.getReplyToUserNickname());
+                        interaction.put("userId", commentResponse.getUserId());
+                        interaction.put("userNickname", commentResponse.getUserNickname());
+                        interaction.put("userAvatar", commentResponse.getUserAvatar());
+                        interaction.put("likeCount", commentResponse.getLikeCount());
+                        interaction.put("replyCount", commentResponse.getReplyCount());
+                        interaction.put("isLike", commentResponse.getIsLiked() != null ? commentResponse.getIsLiked() : false);
+                        interaction.put("createTime", commentResponse.getCreateTime());
+                        interaction.put("updateTime", commentResponse.getUpdateTime());
+                        interaction.put("status", commentResponse.getStatus());
+                        
+                        // 设置与评论相关的标识
+                        interaction.put("commentRelated", false);
+                        interaction.put("dynamicRelated", "DYNAMIC".equals(commentResponse.getCommentType()));
+                        interaction.put("contentRelated", "CONTENT".equals(commentResponse.getCommentType()));
+                        interaction.put("likeType", false);
+                        
+                        // 初始化需要补充的字段为null，稍后会填充
+                        interaction.put("targetTitle", null);
+                        interaction.put("targetAuthorId", null);
+                        interaction.put("targetAuthorNickname", null);
+                        interaction.put("targetAuthorAvatar", null);
+                        interaction.put("contentDescription", null);
+                        interaction.put("contentCoverUrl", new ArrayList<>());
+                        interaction.put("contentLikeCount", null);
+                        interaction.put("isFollowingAuthor", false);
+                        
+                        allInteractions.add(interaction);
+                    }
+                    log.debug("用户评论数据获取成功: 总数={}", commentPage.getTotal());
+                }
+            } catch (Exception e) {
+                log.warn("获取用户评论数据失败: userId={}", userId, e);
+            }
+            
+            // 批量查询内容信息并补充评论数据
+            Set<Long> contentIds = allInteractions.stream()
+                    .filter(interaction -> "COMMENT".equals(interaction.get("type")) && "CONTENT".equals(interaction.get("subType")))
+                    .map(interaction -> (Long) interaction.get("targetId"))
+                    .filter(contentId -> contentId != null)
+                    .collect(Collectors.toSet());
+            
+            Map<Long, Content> contentMap = new HashMap<>();
+            if (!contentIds.isEmpty()) {
+                try {
+                    log.debug("批量查询内容信息: contentIds.size={}", contentIds.size());
+                    List<Content> contents = contentService.getContentsByConditions(
+                        null, null, null, null, null, null, null,
+                        "createTime", "DESC", 1, contentIds.size() * 2
+                    );
+                    
+                    contentMap = contents.stream()
+                            .filter(content -> contentIds.contains(content.getId()))
+                            .collect(Collectors.toMap(Content::getId, content -> content, (existing, replacement) -> existing));
+                    log.debug("内容信息查询完成: 找到{}个内容信息", contentMap.size());
+                } catch (Exception e) {
+                    log.warn("批量查询内容信息失败", e);
+                }
+            }
+            
+            // 填充评论的内容信息
+            final Map<Long, Content> finalContentMap = contentMap;
+            allInteractions.stream()
+                    .filter(interaction -> "COMMENT".equals(interaction.get("type")) && "CONTENT".equals(interaction.get("subType")))
+                    .forEach(interaction -> {
+                        Long contentId = (Long) interaction.get("targetId");
+                        if (contentId != null && finalContentMap.containsKey(contentId)) {
+                            Content content = finalContentMap.get(contentId);
+                            interaction.put("targetTitle", content.getTitle());
+                            interaction.put("targetAuthorId", content.getAuthorId());
+                            interaction.put("contentDescription", content.getDescription());
+                            interaction.put("contentLikeCount", content.getLikeCount());
+                            
+                            // 处理封面URL
+                            if (content.getCoverUrl() != null && !content.getCoverUrl().trim().isEmpty()) {
+                                List<String> coverUrls = new ArrayList<>();
+                                coverUrls.add(content.getCoverUrl());
+                                interaction.put("contentCoverUrl", coverUrls);
+                            } else {
+                                interaction.put("contentCoverUrl", new ArrayList<>());
+                            }
+                        }
+                    });
+
             // 批量查询作者昵称信息
             Set<Long> authorIds = allInteractions.stream()
                     .map(interaction -> (Long) interaction.get("targetAuthorId"))
@@ -171,15 +285,58 @@ public class UserInteractionController {
                 }
             }
             
-            // 填充作者昵称信息
+            // 批量查询作者详细信息（昵称和头像）
+            Map<Long, User> authorMap = new HashMap<>();
+            if (!authorIds.isEmpty()) {
+                try {
+                    log.debug("批量查询作者详细信息: authorIds.size={}", authorIds.size());
+                    List<User> authors = userMapper.selectBatchIds(authorIds);
+                    authorMap = authors.stream()
+                            .collect(Collectors.toMap(User::getId, user -> user, (existing, replacement) -> existing));
+                    
+                    // 保持向后兼容的昵称Map
+                    authorNicknameMap = authors.stream()
+                            .collect(Collectors.toMap(User::getId, User::getNickname, (existing, replacement) -> existing));
+                    log.debug("作者详细信息查询完成: 找到{}个作者信息", authorMap.size());
+                } catch (Exception e) {
+                    log.warn("批量查询作者详细信息失败", e);
+                }
+            }
+            
+            // 填充作者详细信息
+            final Map<Long, User> finalAuthorMap = authorMap;
             final Map<Long, String> finalAuthorNicknameMap = authorNicknameMap;
             allInteractions.forEach(interaction -> {
                 Long authorId = (Long) interaction.get("targetAuthorId");
-                if (authorId != null) {
+                if (authorId != null && finalAuthorMap.containsKey(authorId)) {
+                    User author = finalAuthorMap.get(authorId);
+                    interaction.put("targetAuthorNickname", author.getNickname());
+                    interaction.put("targetAuthorAvatar", author.getAvatar());
+                } else if (authorId != null) {
+                    // 如果详细信息查询失败，至少尝试填充昵称
                     String authorNickname = finalAuthorNicknameMap.get(authorId);
                     interaction.put("targetAuthorNickname", authorNickname);
                 }
             });
+            
+            // 填充关注状态（仅对评论类型）
+            final Long finalUserId = userId;
+            allInteractions.stream()
+                    .filter(interaction -> "COMMENT".equals(interaction.get("type")))
+                    .forEach(interaction -> {
+                        Long authorId = (Long) interaction.get("targetAuthorId");
+                        if (authorId != null && !authorId.equals(finalUserId)) {
+                            try {
+                                boolean isFollowing = followService.checkFollowStatus(finalUserId, authorId);
+                                interaction.put("isFollowingAuthor", isFollowing);
+                            } catch (Exception e) {
+                                log.debug("查询关注状态失败: userId={}, authorId={}", finalUserId, authorId);
+                                interaction.put("isFollowingAuthor", false);
+                            }
+                        } else {
+                            interaction.put("isFollowingAuthor", false);
+                        }
+                    });
             
             // 按创建时间倒序排序（最新的在前）
             allInteractions.sort((a, b) -> {
@@ -239,6 +396,17 @@ public class UserInteractionController {
                 log.warn("获取用户关注统计失败: userId={}", userId, e);
                 statistics.put("totalFollowing", 0L);
                 statistics.put("totalFollowers", 0L);
+            }
+            
+            try {
+                // 统计用户评论数量
+                long totalComments = allInteractions.stream()
+                        .filter(interaction -> "COMMENT".equals(interaction.get("type")))
+                        .count();
+                statistics.put("totalComments", totalComments);
+            } catch (Exception e) {
+                log.warn("获取用户评论统计失败: userId={}", userId, e);
+                statistics.put("totalComments", 0L);
             }
             
             result.put("statistics", statistics);
