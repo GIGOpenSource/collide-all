@@ -176,24 +176,7 @@ public class LikeServiceImpl implements LikeService {
 
 
 
-    @Override
-    public Map<Long, Boolean> batchCheckLikeStatus(Long userId, String likeType, List<Long> targetIds) {
-        log.debug("批量检查点赞状态: userId={}, likeType={}, targetIds.size={}", userId, likeType, targetIds.size());
 
-        if (userId == null || !StringUtils.hasText(likeType) || targetIds == null || targetIds.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        List<Long> likedTargetIds = likeMapper.batchCheckLikeStatus(userId, likeType, targetIds);
-
-        // 构建结果Map：targetId -> isLiked
-        Map<Long, Boolean> resultMap = new HashMap<>();
-        for (Long targetId : targetIds) {
-            resultMap.put(targetId, likedTargetIds.contains(targetId));
-        }
-
-        return resultMap;
-    }
 
     // =================== 私有方法 ===================
 
@@ -247,16 +230,7 @@ public class LikeServiceImpl implements LikeService {
         return likeMapper.findByTimeRange(startTime, endTime, likeType, status);
     }
 
-    @Override
-    public Like getLikeRecord(Long userId, String likeType, Long targetId) {
-        log.debug("获取用户对目标对象的点赞记录: userId={}, likeType={}, targetId={}", userId, likeType, targetId);
 
-        if (userId == null || !StringUtils.hasText(likeType) || targetId == null) {
-            return null;
-        }
-
-        return likeMapper.findByUserAndTarget(userId, likeType, targetId);
-    }
 
     @Override
     public IPage<Like> findAuthorLikes(Integer pageNum, Integer pageSize, Long targetAuthorId, String likeType, String status) {
@@ -307,29 +281,7 @@ public class LikeServiceImpl implements LikeService {
         }
     }
 
-    @Override
-    public boolean checkLikeStatus(Long userId, String likeType, Long targetId) {
-        log.info("检查点赞状态: userId={}, likeType={}, targetId={}", userId, likeType, targetId);
 
-        if (userId == null || !StringUtils.hasText(likeType) || targetId == null) {
-            log.warn("参数验证失败: userId={}, likeType={}, targetId={}", userId, likeType, targetId);
-            return false;
-        }
-
-        Like like = likeMapper.findByUserAndTarget(userId, likeType, targetId);
-        log.info("查询结果: like={}", like);
-        
-        if (like != null) {
-            log.info("点赞记录存在: id={}, status={}", like.getId(), like.getStatus());
-        } else {
-            log.info("未找到点赞记录");
-        }
-        
-        // 检查记录是否存在且状态为active
-        boolean result = like != null && like.isActive();
-        log.info("最终结果: {}", result);
-        return result;
-    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
