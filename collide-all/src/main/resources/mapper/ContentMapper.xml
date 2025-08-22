@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.ContentMapper">
+
+    <!-- 基础字段定义 -->
+    <sql id="baseColumns">
+        id, title, description, content_type, content_data, cover_url, tags,
+        author_id, author_nickname, author_avatar,
+        category_id, category_name,
+        status, review_status,
+        view_count, like_count, comment_count, favorite_count, share_count, score_count, score_total,
+        publish_time, create_time, update_time
+    </sql>
+
+    <!-- 优化后的条件查询 - 减少动态SQL复杂度，强制使用索引 -->
+    <select id="selectContentsByConditions" resultType="com.gig.collide.domain.Content">
+        <choose>
+            <!-- 按作者查询 - 使用 idx_author_status_publish 索引 -->
+            <when test="authorId != null">
+                SELECT /*+ USE_INDEX(t_content, idx_author_status_publish) */ <include refid="baseColumns"/>
+                FROM t_content FORCE INDEX (idx_author_status_publish)
+                <![CDATA[
+                WHERE author_id = #{authorId}
+                ]]>
+                <if test="status != null and status != ''">
+                    <![CDATA[
+                    AND status = #{status}
+                    ]]>
+                </if>
+                <if test="reviewStatus != null and reviewStatus != ''">
+                    <![CDATA[
+                    AND review_status = #{reviewStatus}
+                    ]]>
+                </if>
+                <include refid="additionalConditions"/>
+                <include refid="optimizedOrderBy"/>
+            </when>
+            <!-- 按分类查询 - 使用 idx_category_status_publish 索引 -->
+            <when test="categoryId != null">
+                SELECT /*+ USE_INDEX(t_content, idx_category_status_publish) */ <include refid="baseColumns"/>
+                FROM t_content FORCE INDEX (idx_category_status_publish)
+                <![CDATA[
+                WHERE category_id = #{categoryId}
+                ]]>
+                <if test="status != null and status != ''">
+                    <![CDATA[
+                    AND status = #{status}
+                    ]]>
+                </if>
+                <if test="reviewStatus != null and reviewStatus != ''">
+                    <![CDATA[
+                    AND review_status = #{reviewStatus}
+                    ]]>
+                </if>
+                <include refid="additionalConditions"/>
+                <include refid="optimizedOrderBy"/>
+            </when>
+            <!-- 按内容类型查询 - 使用 idx_type_status_publish 索引 -->
+            <when test="contentType != null and contentType != ''">
+                SELECT /*+ USE_INDEX(t_content, idx_type_status_publish) */ <include refid="baseColumns"/>
+                FROM t_content FORCE INDEX (idx_type_status_publish)
+                <![CDATA[
+                WHERE content_type = #{contentType}
+                ]]>
+                <if test="status != null and status != ''">
+                    <![CDATA[
+                    AND status = #{status}
+                    ]]>
+                </if>
+                <if test="reviewStatus != null and reviewStatus != ''">
+                    <![CDATA[
+                    AND review_status = #{reviewStatus}
+                    ]]>
+                </if>
+                <include refid="additionalConditions"/>
+                <include refid="optimizedOrderBy"/>
+            </when>
+            <!-- 默认查询 - 根据排序选择最优索引 -->
+            <otherwise>
+                <choose>
+                    <when test="orderBy == 'viewCount'">
+                        SELECT /*+ USE_INDEX(t_content, idx_view_count_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_view_count_desc)
+                    </when>
+                    <when test="orderBy == 'likeCount'">
+                        SELECT /*+ USE_INDEX(t_content, idx_like_count_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_like_count_desc)
+                    </when>
+                    <when test="orderBy == 'favoriteCount'">
+                        SELECT /*+ USE_INDEX(t_content, idx_favorite_count_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_favorite_count_desc)
+                    </when>
+                    <when test="orderBy == 'commentCount'">
+                        SELECT /*+ USE_INDEX(t_content, idx_comment_count_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_comment_count_desc)
+                    </when>
+                    <when test="orderBy == 'shareCount'">
+                        SELECT /*+ USE_INDEX(t_content, idx_share_count_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_share_count_desc)
+                    </when>
+                    <when test="orderBy == 'createTime'">
+                        SELECT /*+ USE_INDEX(t_content, idx_create_time_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_create_time_desc)
+                    </when>
+                    <when test="orderBy == 'updateTime'">
+                        SELECT /*+ USE_INDEX(t_content, idx_update_time_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_update_time_desc)
+                    </when>
+                    <otherwise>
+                        SELECT <include refid="baseColumns"/>
+                        FROM t_content
+                    </otherwise>
+                </choose>
+                <where>
+                    <if test="status != null and status != ''">
+                        <![CDATA[
+                        AND status = #{status}
+                        ]]>
+                    </if>
+                    <if test="reviewStatus != null and reviewStatus != ''">
+                        <![CDATA[
+                        AND review_status = #{reviewStatus}
+                        ]]>
+                    </if>
+                    <include refid="additionalConditions"/>
+                </where>
+                <include refid="optimizedOrderBy"/>
+            </otherwise>
+        </choose>
+        <if test="currentPage != null and pageSize != null">
+            LIMIT #{currentPage}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 额外条件片段 -->
+    <sql id="additionalConditions">
+        <if test="minScore != null">
+            <![CDATA[
+            AND score_count > 0 AND (score_total / score_count) >= #{minScore}
+            ]]>
+        </if>
+        <if test="timeRange != null and timeRange &gt; 0">
+            <![CDATA[
+            AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
+            ]]>
+        </if>
+    </sql>
+
+    <!-- 优化后的排序片段 -->
+    <sql id="optimizedOrderBy">
+        <choose>
+            <when test="orderBy == 'viewCount'">ORDER BY view_count DESC, publish_time DESC</when>
+            <when test="orderBy == 'likeCount'">ORDER BY like_count DESC, publish_time DESC</when>
+            <when test="orderBy == 'favoriteCount'">ORDER BY favorite_count DESC, publish_time DESC</when>
+            <when test="orderBy == 'commentCount'">ORDER BY comment_count DESC, publish_time DESC</when>
+            <when test="orderBy == 'shareCount'">ORDER BY share_count DESC, publish_time DESC</when>
+            <when test="orderBy == 'createTime'">ORDER BY create_time DESC</when>
+            <when test="orderBy == 'updateTime'">ORDER BY update_time DESC</when>
+            <when test="orderBy == 'score'">ORDER BY (score_total / score_count) DESC, publish_time DESC</when>
+            <otherwise>ORDER BY publish_time DESC</otherwise>
+        </choose>
+    </sql>
+
+    <!-- 优化后的搜索查询 - 使用全文索引提升性能 -->
+    <select id="searchContents" resultType="com.gig.collide.domain.Content">
+        <choose>
+            <!-- 有关键词搜索 - 使用全文索引 -->
+            <when test="keyword != null and keyword != ''">
+                SELECT /*+ USE_INDEX(t_content, ft_title_desc_search) */ <include refid="baseColumns"/>
+                FROM t_content
+                WHERE MATCH(title, description) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
+                AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+                <if test="contentType != null and contentType != ''">AND content_type = #{contentType}</if>
+                <if test="categoryId != null">AND category_id = #{categoryId}</if>
+                ORDER BY 
+                    MATCH(title, description) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE) DESC,
+                    view_count DESC, 
+                    publish_time DESC
+            </when>
+            <!-- 无关键词 - 按分类或类型查询 -->
+            <otherwise>
+                <choose>
+                    <when test="categoryId != null">
+                        SELECT /*+ USE_INDEX(t_content, idx_category_status_publish) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_category_status_publish)
+                        WHERE category_id = #{categoryId}
+                        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+                        <if test="contentType != null and contentType != ''">AND content_type = #{contentType}</if>
+                        ORDER BY view_count DESC, publish_time DESC
+                    </when>
+                    <when test="contentType != null and contentType != ''">
+                        SELECT /*+ USE_INDEX(t_content, idx_type_status_publish) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_type_status_publish)
+                        WHERE content_type = #{contentType}
+                        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+                        ORDER BY view_count DESC, publish_time DESC
+                    </when>
+                    <otherwise>
+                        SELECT /*+ USE_INDEX(t_content, idx_view_count_desc) */ <include refid="baseColumns"/>
+                        FROM t_content FORCE INDEX (idx_view_count_desc)
+                        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+                        ORDER BY view_count DESC, publish_time DESC
+                    </otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+        <if test="currentPage != null and pageSize != null">
+            LIMIT #{currentPage}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 标签搜索查询（单独优化） -->
+    <select id="searchContentsByTags" resultType="com.gig.collide.domain.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE FIND_IN_SET(#{tag}, REPLACE(tags, ' ', '')) > 0
+        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+        <if test="contentType != null and contentType != ''">AND content_type = #{contentType}</if>
+        <if test="categoryId != null">AND category_id = #{categoryId}</if>
+        ORDER BY view_count DESC, publish_time DESC
+        <if test="currentPage != null and pageSize != null">
+            LIMIT #{currentPage}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 优化后的推荐内容查询 - 使用专门的推荐索引 -->
+    <select id="getRecommendedContents" resultType="com.gig.collide.domain.Content">
+        SELECT /*+ USE_INDEX(t_content, idx_recommend_content) */ <include refid="baseColumns"/>
+        FROM t_content FORCE INDEX (idx_recommend_content)
+        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+        <if test="excludeContentIds != null and excludeContentIds.size() &gt; 0 and excludeContentIds.size() &lt; 100">
+            <![CDATA[
+            AND id NOT IN
+            ]]>
+            <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
+                #{contentId}
+            </foreach>
+        </if>
+        ORDER BY view_count DESC, like_count DESC, favorite_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 优化后的相似内容查询 - 避免子查询，提前获取参数 -->
+    <select id="getSimilarContents" resultType="com.gig.collide.domain.Content">
+        SELECT /*+ USE_INDEX(t_content, idx_similar_content) */ <include refid="baseColumns"/>
+        FROM t_content FORCE INDEX (idx_similar_content)
+        WHERE id != #{contentId}
+        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+        AND (category_id = #{categoryId} OR content_type = #{contentType})
+        ORDER BY 
+            CASE 
+                WHEN category_id = #{categoryId} AND content_type = #{contentType} THEN 1
+                WHEN category_id = #{categoryId} THEN 2
+                WHEN content_type = #{contentType} THEN 3
+                ELSE 4
+            END,
+            view_count DESC, 
+            publish_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 热门内容快速查询 - 缓存友好 -->
+    <select id="getHotContents" resultType="com.gig.collide.domain.Content">
+        SELECT /*+ USE_INDEX(t_content, idx_view_count_desc) */ <include refid="baseColumns"/>
+        FROM t_content FORCE INDEX (idx_view_count_desc)
+        WHERE status = 'PUBLISHED' 
+        AND review_status = 'APPROVED'
+        AND view_count >= #{minViewCount}
+        ORDER BY view_count DESC, like_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 最新内容查询 -->
+    <select id="getLatestContents" resultType="com.gig.collide.domain.Content">
+        SELECT /*+ USE_INDEX(t_content, idx_create_time_desc) */ <include refid="baseColumns"/>
+        FROM t_content FORCE INDEX (idx_create_time_desc)
+        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+        <if test="contentType != null and contentType != ''">AND content_type = #{contentType}</if>
+        <if test="categoryId != null">AND category_id = #{categoryId}</if>
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 更新内容状态 -->
+    <update id="updateContentStatus">
+        UPDATE t_content
+        SET status = #{status}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 更新审核状态 -->
+    <update id="updateReviewStatus">
+        UPDATE t_content
+        SET review_status = #{reviewStatus}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 更新内容基本信息 -->
+    <update id="updateContentInfo">
+        UPDATE t_content
+        SET title = #{title}, 
+            description = #{description}, 
+            tags = #{tags}, 
+            cover_url = #{coverUrl},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 更新内容统计信息 -->
+    <update id="updateContentStats">
+        UPDATE t_content
+        SET view_count = #{viewCount}, 
+            like_count = #{likeCount}, 
+            comment_count = #{commentCount}, 
+            favorite_count = #{favoriteCount}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 批量更新状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_content
+        SET status = #{status}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <!-- 使用主键索引进行批量更新 -->
+    </update>
+
+    <!-- 软删除内容 -->
+    <update id="softDeleteContent">
+        UPDATE t_content
+        SET status = 'DELETED'
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 批量软删除内容 -->
+    <update id="batchSoftDeleteContent">
+        UPDATE t_content
+        SET status = 'DELETED', update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <!-- 使用主键索引进行批量更新 -->
+    </update>
+
+    <!-- 增量更新统计数据 - 性能优化版本 -->
+    <update id="incrementViewCount">
+        UPDATE t_content 
+        SET view_count = view_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementLikeCount">
+        UPDATE t_content 
+        SET like_count = like_count + #{increment},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementCommentCount">
+        UPDATE t_content 
+        SET comment_count = comment_count + #{increment},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementFavoriteCount">
+        UPDATE t_content 
+        SET favorite_count = favorite_count + #{increment},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementShareCount">
+        UPDATE t_content 
+        SET share_count = share_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量统计查询 - 用于数据分析 -->
+    <select id="getContentStatsByDateRange" resultType="java.util.Map">
+        SELECT 
+            DATE(create_time) as date,
+            COUNT(*) as total_count,
+            SUM(view_count) as total_views,
+            SUM(like_count) as total_likes,
+            SUM(comment_count) as total_comments,
+            SUM(favorite_count) as total_favorites,
+            AVG(view_count) as avg_views
+        FROM t_content
+        WHERE create_time BETWEEN #{startDate} AND #{endDate}
+        <if test="status != null and status != ''">AND status = #{status}</if>
+        <if test="contentType != null and contentType != ''">AND content_type = #{contentType}</if>
+        GROUP BY DATE(create_time)
+        ORDER BY date DESC
+    </select>
+
+    <!-- 内容排行榜查询 - 缓存友好 -->
+    <select id="getTopContentsByMetric" resultType="com.gig.collide.domain.Content">
+        <choose>
+            <when test="metric == 'view'">
+                SELECT /*+ USE_INDEX(t_content, idx_view_count_desc) */ <include refid="baseColumns"/>
+                FROM t_content FORCE INDEX (idx_view_count_desc)
+                WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+                <if test="timeRange != null and timeRange &gt; 0">
+                    AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
+                </if>
+                ORDER BY view_count DESC
+            </when>
+            <when test="metric == 'like'">
+                SELECT /*+ USE_INDEX(t_content, idx_like_count_desc) */ <include refid="baseColumns"/>
+                FROM t_content FORCE INDEX (idx_like_count_desc)
+                WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+                <if test="timeRange != null and timeRange &gt; 0">
+                    AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
+                </if>
+                ORDER BY like_count DESC
+            </when>
+            <when test="metric == 'favorite'">
+                SELECT /*+ USE_INDEX(t_content, idx_favorite_count_desc) */ <include refid="baseColumns"/>
+                FROM t_content FORCE INDEX (idx_favorite_count_desc)
+                WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+                <if test="timeRange != null and timeRange &gt; 0">
+                    AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
+                </if>
+                ORDER BY favorite_count DESC
+            </when>
+            <otherwise>
+                SELECT /*+ USE_INDEX(t_content, idx_view_count_desc) */ <include refid="baseColumns"/>
+                FROM t_content FORCE INDEX (idx_view_count_desc)
+                WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+                ORDER BY view_count DESC
+            </otherwise>
+        </choose>
+        LIMIT #{limit}
+    </select>
+
+</mapper>

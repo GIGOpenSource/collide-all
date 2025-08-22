@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.VideoSearchMapper">
+
+    <!-- 视频混合搜索 - 支持多种条件组合查询 -->
+    <select id="searchVideosWithConditions" resultType="java.util.Map">
+        <![CDATA[
+        SELECT 
+            c.id as contentId,
+            c.title,
+            c.description,
+            c.content_type as contentType,
+            c.status,
+            c.author_id as authorId,
+            c.author_nickname as authorNickname,
+            c.author_avatar as authorAvatar,
+            c.category_id as categoryId,
+            c.category_name as categoryName,
+            c.tags,
+            c.view_count as viewCount,
+            c.like_count as likeCount,
+            c.favorite_count as favoriteCount,
+            c.comment_count as commentCount,
+            0 as shareCount,
+            CASE 
+                WHEN c.score_count > 0 THEN ROUND(c.score_total / c.score_count, 2)
+                ELSE 0 
+            END as score,
+            c.score_count as scoreCount,
+            c.create_time as createTime,
+            c.publish_time as publishTime,
+            c.update_time as updateTime,
+            cp.payment_type as paymentType,
+            cp.coin_price as price,
+            cp.original_price as originalPrice,
+            cp.vip_free as vipFree,
+            cp.vip_only as vipOnly,
+            cp.trial_enabled as trialEnabled,
+            cp.trial_word_count as trialDuration,
+            cp.valid_days as validityDays,
+            cp.is_permanent as permanent,
+            cp.total_sales as salesCount,
+            cp.total_revenue as revenue,
+            CASE 
+                WHEN #{keyword} IS NOT NULL AND #{keyword} != '' THEN
+                    (CASE WHEN c.title LIKE CONCAT('%', #{keyword}, '%') THEN 10 ELSE 0 END) +
+                    (CASE WHEN c.description LIKE CONCAT('%', #{keyword}, '%') THEN 5 ELSE 0 END) +
+                    (CASE WHEN JSON_SEARCH(c.tags, 'one', #{keyword}) IS NOT NULL THEN 3 ELSE 0 END) +
+                    (c.view_count * 0.0001) + (c.like_count * 0.001) + 
+                    (CASE WHEN c.score_count > 0 THEN (c.score_total / c.score_count * 0.1) ELSE 0 END)
+                ELSE
+                    (c.view_count * 0.0001) + (c.like_count * 0.001) + 
+                    (CASE WHEN c.score_count > 0 THEN (c.score_total / c.score_count * 0.1) ELSE 0 END)
+            END as relevanceScore
+        FROM t_content c
+        LEFT JOIN t_content_payment cp ON c.id = cp.content_id
+        ]]>
+        <where>
+            <!-- 基础条件 -->
+            <if test="contentType != null and contentType != '' and contentType != 'ALL'">
+                <![CDATA[ AND c.content_type = #{contentType} ]]>
+            </if>
+            
+            <if test="!includeOffline">
+                <![CDATA[ AND c.status = 'PUBLISHED' ]]>
+            </if>
+            
+            <!-- 关键词搜索 -->
+            <if test="keyword != null and keyword != ''">
+                <![CDATA[
+                AND (
+                    c.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR c.description LIKE CONCAT('%', #{keyword}, '%')
+                    OR JSON_SEARCH(c.tags, 'one', #{keyword}) IS NOT NULL
+                )
+                ]]>
+            </if>
+            
+            <!-- 分类搜索 -->
+            <if test="categoryId != null">
+                <![CDATA[ AND c.category_id = #{categoryId} ]]>
+            </if>
+            
+            <!-- 作者搜索 -->
+            <if test="authorId != null">
+                <![CDATA[ AND c.author_id = #{authorId} ]]>
+            </if>
+            
+            <!-- 标签搜索 -->
+            <if test="tags != null and tags.size() > 0">
+                <![CDATA[
+                AND (
+                ]]>
+                <foreach collection="tags" item="tag" separator=" OR ">
+                    <![CDATA[ JSON_SEARCH(c.tags, 'one', #{tag}) IS NOT NULL ]]>
+                </foreach>
+                <![CDATA[
+                )
+                ]]>
+            </if>
+            
+            <!-- 价格条件搜索 -->
+            <if test="priceType != null and priceType != 'ALL'">
+                <choose>
+                    <when test="priceType == 'FREE'">
+                        <![CDATA[ AND cp.payment_type = 'FREE' ]]>
+                    </when>
+                    <when test="priceType == 'VIP'">
+                        <![CDATA[ AND cp.vip_free = 1 ]]>
+                    </when>
+                    <when test="priceType == 'PAID'">
+                        <![CDATA[ AND cp.payment_type IN ('COIN_PAY', 'TIME_LIMITED') ]]>
+                    </when>
+                </choose>
+            </if>
+            
+            <if test="minPrice != null">
+                <![CDATA[ AND cp.coin_price >= #{minPrice} ]]>
+            </if>
+            
+            <if test="maxPrice != null">
+                <![CDATA[ AND cp.coin_price <= #{maxPrice} ]]>
+            </if>
+            
+            <if test="vipOnly != null and vipOnly">
+                <![CDATA[ AND cp.vip_only = 1 ]]>
+            </if>
+            
+            <if test="trialEnabled != null and trialEnabled">
+                <![CDATA[ AND cp.trial_enabled = 1 ]]>
+            </if>
+            
+            <!-- 时间条件搜索 -->
+            <if test="timeRange != null">
+                <choose>
+                    <when test="timeRange == 'THIS_WEEK'">
+                        <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY) ]]>
+                    </when>
+                    <when test="timeRange == 'THIS_MONTH'">
+                        <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY) ]]>
+                    </when>
+                    <when test="timeRange == 'HALF_YEAR'">
+                        <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL 180 DAY) ]]>
+                    </when>
+                    <when test="timeRange == 'CUSTOM' and customDays != null">
+                        <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL #{customDays} DAY) ]]>
+                    </when>
+                </choose>
+            </if>
+        </where>
+        
+        <!-- 排序 -->
+        <choose>
+            <when test="sortBy == 'hot'">
+                <![CDATA[ ORDER BY c.view_count ${sortDirection}, c.like_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'favorite'">
+                <![CDATA[ ORDER BY c.favorite_count ${sortDirection}, c.view_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'latest'">
+                <![CDATA[ ORDER BY c.create_time ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'relevance'">
+                <![CDATA[ ORDER BY relevanceScore ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'random'">
+                <![CDATA[ ORDER BY RAND() ]]>
+            </when>
+            <otherwise>
+                <![CDATA[ ORDER BY c.create_time DESC ]]>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取视频搜索建议 -->
+    <select id="getVideoSearchSuggestions" resultType="java.lang.String">
+        <![CDATA[
+        SELECT DISTINCT 
+            CASE 
+                WHEN title LIKE CONCAT(#{keyword}, '%') THEN title
+                WHEN description LIKE CONCAT(#{keyword}, '%') THEN 
+                    SUBSTRING(description, LOCATE(#{keyword}, description), 50)
+                ELSE NULL
+            END as suggestion
+        FROM t_content
+        WHERE status = 'PUBLISHED'
+        AND (
+            title LIKE CONCAT(#{keyword}, '%')
+            OR description LIKE CONCAT(#{keyword}, '%')
+            OR JSON_SEARCH(tags, 'one', #{keyword}) IS NOT NULL
+        )
+        AND suggestion IS NOT NULL
+        ORDER BY view_count DESC
+        LIMIT #{limit}
+        ]]>
+    </select>
+
+    <!-- 获取热门视频标签 -->
+    <select id="getHotVideoTags" resultType="java.lang.String">
+        <![CDATA[
+        SELECT 
+            SUBSTRING_INDEX(SUBSTRING_INDEX(tags, ',', numbers.n), ',', -1) as tag
+        FROM t_content
+        CROSS JOIN (
+            SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+        ) numbers
+        WHERE status = 'PUBLISHED'
+        AND tags IS NOT NULL
+        AND tags != ''
+        AND CHAR_LENGTH(tags) - CHAR_LENGTH(REPLACE(tags, ',', '')) >= numbers.n - 1
+        GROUP BY tag
+        ORDER BY COUNT(*) DESC, SUM(view_count) DESC
+        LIMIT #{limit}
+        ]]>
+    </select>
+
+    <!-- 根据标签搜索视频 -->
+    <select id="searchVideosByTags" resultType="java.util.Map">
+        <![CDATA[
+        SELECT 
+            c.id as contentId,
+            c.title,
+            c.description,
+            c.content_type as contentType,
+            c.status,
+            c.author_id as authorId,
+            c.author_nickname as authorNickname,
+            c.category_id as categoryId,
+            c.category_name as categoryName,
+            c.tags,
+            c.view_count as viewCount,
+            c.like_count as likeCount,
+            c.favorite_count as favoriteCount,
+            c.create_time as createTime
+        FROM t_content c
+        ]]>
+        <where>
+            <![CDATA[
+            c.status = 'PUBLISHED'
+            ]]>
+            <if test="contentType != null and contentType != '' and contentType != 'ALL'">
+                <![CDATA[ AND c.content_type = #{contentType} ]]>
+            </if>
+            <![CDATA[
+            AND (
+            ]]>
+            <foreach collection="tags" item="tag" separator=" OR ">
+                <![CDATA[ JSON_SEARCH(c.tags, 'one', #{tag}) IS NOT NULL ]]>
+            </foreach>
+            <![CDATA[
+            )
+            ]]>
+        </where>
+        <choose>
+            <when test="sortBy == 'hot'">
+                <![CDATA[ ORDER BY c.view_count ${sortDirection}, c.like_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'favorite'">
+                <![CDATA[ ORDER BY c.favorite_count ${sortDirection}, c.view_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'latest'">
+                <![CDATA[ ORDER BY c.create_time ${sortDirection} ]]>
+            </when>
+            <otherwise>
+                <![CDATA[ ORDER BY c.create_time DESC ]]>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据价格条件搜索视频 -->
+    <select id="searchVideosByPrice" resultType="java.util.Map">
+        <![CDATA[
+        SELECT 
+            c.id as contentId,
+            c.title,
+            c.description,
+            c.content_type as contentType,
+            c.status,
+            c.author_id as authorId,
+            c.author_nickname as authorNickname,
+            c.category_id as categoryId,
+            c.category_name as categoryName,
+            cp.payment_type as paymentType,
+            cp.coin_price as price,
+            cp.original_price as originalPrice,
+            cp.vip_free as vipFree,
+            cp.vip_only as vipOnly,
+            cp.trial_enabled as trialEnabled,
+            c.view_count as viewCount,
+            c.like_count as likeCount,
+            c.create_time as createTime
+        FROM t_content c
+        INNER JOIN t_content_payment cp ON c.id = cp.content_id
+        ]]>
+        <where>
+            <![CDATA[
+            c.status = 'PUBLISHED'
+            ]]>
+            <if test="contentType != null and contentType != '' and contentType != 'ALL'">
+                <![CDATA[ AND c.content_type = #{contentType} ]]>
+            </if>
+            
+            <if test="priceType != null and priceType != 'ALL'">
+                <choose>
+                    <when test="priceType == 'FREE'">
+                        <![CDATA[ AND cp.payment_type = 'FREE' ]]>
+                    </when>
+                    <when test="priceType == 'VIP'">
+                        <![CDATA[ AND cp.vip_free = 1 ]]>
+                    </when>
+                    <when test="priceType == 'PAID'">
+                        <![CDATA[ AND cp.payment_type IN ('COIN_PAY', 'TIME_LIMITED') ]]>
+                    </when>
+                </choose>
+            </if>
+            
+            <if test="minPrice != null">
+                <![CDATA[ AND cp.coin_price >= #{minPrice} ]]>
+            </if>
+            
+            <if test="maxPrice != null">
+                <![CDATA[ AND cp.coin_price <= #{maxPrice} ]]>
+            </if>
+            
+            <if test="vipOnly != null and vipOnly">
+                <![CDATA[ AND cp.vip_only = 1 ]]>
+            </if>
+            
+            <if test="trialEnabled != null and trialEnabled">
+                <![CDATA[ AND cp.trial_enabled = 1 ]]>
+            </if>
+        </where>
+        <choose>
+            <when test="sortBy == 'hot'">
+                <![CDATA[ ORDER BY c.view_count ${sortDirection}, c.like_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'favorite'">
+                <![CDATA[ ORDER BY c.favorite_count ${sortDirection}, c.view_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'latest'">
+                <![CDATA[ ORDER BY c.create_time ${sortDirection} ]]>
+            </when>
+            <otherwise>
+                <![CDATA[ ORDER BY c.create_time DESC ]]>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据时间条件搜索视频 -->
+    <select id="searchVideosByTime" resultType="java.util.Map">
+        <![CDATA[
+        SELECT 
+            c.id as contentId,
+            c.title,
+            c.description,
+            c.content_type as contentType,
+            c.status,
+            c.author_id as authorId,
+            c.author_nickname as authorNickname,
+            c.category_id as categoryId,
+            c.category_name as categoryName,
+            c.view_count as viewCount,
+            c.like_count as likeCount,
+            c.favorite_count as favoriteCount,
+            c.create_time as createTime
+        FROM t_content c
+        ]]>
+        <where>
+            <![CDATA[
+            c.status = 'PUBLISHED'
+            ]]>
+            <if test="contentType != null and contentType != '' and contentType != 'ALL'">
+                <![CDATA[ AND c.content_type = #{contentType} ]]>
+            </if>
+            
+            <choose>
+                <when test="timeRange == 'THIS_WEEK'">
+                    <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY) ]]>
+                </when>
+                <when test="timeRange == 'THIS_MONTH'">
+                    <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY) ]]>
+                </when>
+                <when test="timeRange == 'HALF_YEAR'">
+                    <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL 180 DAY) ]]>
+                </when>
+                <when test="timeRange == 'CUSTOM' and customDays != null">
+                    <![CDATA[ AND c.create_time >= DATE_SUB(NOW(), INTERVAL #{customDays} DAY) ]]>
+                </when>
+            </choose>
+        </where>
+        <choose>
+            <when test="sortBy == 'hot'">
+                <![CDATA[ ORDER BY c.view_count ${sortDirection}, c.like_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'favorite'">
+                <![CDATA[ ORDER BY c.favorite_count ${sortDirection}, c.view_count ${sortDirection} ]]>
+            </when>
+            <when test="sortBy == 'latest'">
+                <![CDATA[ ORDER BY c.create_time ${sortDirection} ]]>
+            </when>
+            <otherwise>
+                <![CDATA[ ORDER BY c.create_time DESC ]]>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取视频统计信息 -->
+    <select id="getVideoStatistics" resultType="java.util.Map">
+        <![CDATA[
+        SELECT 
+            id as contentId,
+            view_count as viewCount,
+            like_count as likeCount,
+            favorite_count as favoriteCount,
+            comment_count as commentCount,
+            0 as shareCount,
+            CASE 
+                WHEN score_count > 0 THEN ROUND(score_total / score_count, 2)
+                ELSE 0 
+            END as score,
+            score_count as scoreCount
+        FROM t_content
+        WHERE id IN
+        ]]>
+        <foreach collection="contentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- 获取视频付费配置信息 -->
+    <select id="getVideoPaymentConfigs" resultType="java.util.Map">
+        <![CDATA[
+        SELECT 
+            content_id as contentId,
+            payment_type as paymentType,
+            coin_price as price,
+            original_price as originalPrice,
+            vip_free as vipFree,
+            vip_only as vipOnly,
+            trial_enabled as trialEnabled,
+            trial_word_count as trialDuration,
+            valid_days as validityDays,
+            is_permanent as permanent,
+            total_sales as salesCount,
+            total_revenue as revenue
+        FROM t_content_payment
+        WHERE content_id IN
+        ]]>
+        <foreach collection="contentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- 获取视频标签信息 -->
+    <select id="getVideoTags" resultType="java.util.Map">
+        <![CDATA[
+        SELECT 
+            id as contentId,
+            tags
+        FROM t_content
+        WHERE id IN
+        ]]>
+        <foreach collection="contentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <![CDATA[
+        AND tags IS NOT NULL
+        AND tags != ''
+        ]]>
+    </select>
+
+</mapper>

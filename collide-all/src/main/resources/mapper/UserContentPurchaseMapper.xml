@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.UserContentPurchaseMapper">
+
+    <!-- 基础字段定义 -->
+    <sql id="baseColumns">
+        id, user_id, content_id, content_title, content_type, content_cover_url,
+        author_id, author_nickname, order_id, order_no, coin_amount, original_price, discount_amount,
+        status, purchase_time, expire_time, access_count, last_access_time, create_time, update_time
+    </sql>
+
+    <!-- 检查用户是否已购买指定内容 - 使用复合索引 idx_user_content -->
+    <select id="selectByUserIdAndContentId" resultType="com.gig.collide.domain.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId} AND content_id = #{contentId}
+        <!-- 使用索引: idx_user_content (user_id, content_id) -->
+    </select>
+
+    <!-- 根据订单ID查询购买记录 - 使用复合索引 idx_order_info -->
+    <select id="selectByOrderId" resultType="com.gig.collide.domain.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE order_id = #{orderId}
+        <!-- 使用索引: idx_order_info (order_id, order_no) -->
+    </select>
+
+    <!-- 根据订单号查询购买记录 - 使用复合索引 idx_order_info -->
+    <select id="selectByOrderNo" resultType="com.gig.collide.domain.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE order_no = #{orderNo}
+        <!-- 使用索引: idx_order_info (order_id, order_no) -->
+    </select>
+
+    <!-- 通用条件查询购买记录列表 - 使用复合索引优化 -->
+    <select id="selectPurchasesByConditions" resultType="com.gig.collide.domain.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="contentId != null">
+                AND content_id = #{contentId}
+            </if>
+            <if test="contentType != null and contentType != ''">
+                AND content_type = #{contentType}
+            </if>
+            <if test="authorId != null">
+                AND author_id = #{authorId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="isValid != null">
+                <choose>
+                    <when test="isValid == true">
+                        AND status = 'ACTIVE'
+                        AND (expire_time IS NULL OR expire_time > NOW())
+                    </when>
+                    <when test="isValid == false">
+                        <![CDATA[
+                        AND (status != 'ACTIVE' OR (expire_time IS NOT NULL AND expire_time <= NOW()))
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+            <if test="minAmount != null">
+                <![CDATA[
+                AND coin_amount >= #{minAmount}
+                ]]>
+            </if>
+            <if test="maxAmount != null">
+                <![CDATA[
+                AND coin_amount <= #{maxAmount}
+                ]]>
+            </if>
+            <if test="minAccessCount != null">
+                <![CDATA[
+                AND access_count >= #{minAccessCount}
+                ]]>
+            </if>
+            <if test="isUnread != null">
+                <choose>
+                    <when test="isUnread == true">
+                        AND (access_count = 0 OR access_count IS NULL)
+                    </when>
+                    <when test="isUnread == false">
+                        <![CDATA[
+                        AND access_count > 0
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy == 'createTime' and orderDirection == 'ASC'">
+                ORDER BY create_time ASC
+            </when>
+            <when test="orderBy == 'createTime'">
+                ORDER BY create_time DESC
+            </when>
+            <when test="orderBy == 'purchaseAmount' and orderDirection == 'ASC'">
+                ORDER BY coin_amount ASC
+            </when>
+            <when test="orderBy == 'purchaseAmount'">
+                ORDER BY coin_amount DESC
+            </when>
+            <when test="orderBy == 'accessCount' and orderDirection == 'ASC'">
+                ORDER BY access_count ASC
+            </when>
+            <when test="orderBy == 'accessCount'">
+                ORDER BY access_count DESC
+            </when>
+            <when test="orderBy == 'lastAccessTime' and orderDirection == 'ASC'">
+                ORDER BY last_access_time ASC
+            </when>
+            <when test="orderBy == 'lastAccessTime'">
+                ORDER BY last_access_time DESC
+            </when>
+            <otherwise>
+                ORDER BY purchase_time DESC
+            </otherwise>
+        </choose>
+        <if test="currentPage != null and pageSize != null">
+            LIMIT #{currentPage}, #{pageSize}
+        </if>
+        <!-- 使用索引: idx_user_status, idx_content_sales, idx_author_purchase -->
+    </select>
+
+    <!-- 推荐购买记录查询 - 使用复合索引优化 -->
+    <select id="selectRecommendedPurchases" resultType="com.gig.collide.domain.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="contentType != null and contentType != ''">
+                AND content_type = #{contentType}
+            </if>
+            <if test="excludeContentIds != null and excludeContentIds.size() &gt; 0">
+                <![CDATA[
+                AND content_id NOT IN
+                ]]>
+                <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
+                    #{contentId}
+                </foreach>
+            </if>
+            AND status = 'ACTIVE'
+        </where>
+        <choose>
+            <when test="strategy == 'RECENT'">
+                ORDER BY purchase_time DESC
+            </when>
+            <when test="strategy == 'HIGH_VALUE'">
+                ORDER BY coin_amount DESC, purchase_time DESC
+            </when>
+            <when test="strategy == 'MOST_ACCESSED'">
+                ORDER BY access_count DESC, last_access_time DESC
+            </when>
+            <when test="strategy == 'POPULAR'">
+                ORDER BY access_count DESC, purchase_time DESC
+            </when>
+            <otherwise>
+                ORDER BY purchase_time DESC
+            </otherwise>
+        </choose>
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+        <!-- 使用索引: idx_user_status, idx_coin_amount, idx_access_stats -->
+    </select>
+
+    <!-- 过期相关查询 - 使用复合索引 idx_expire_time -->
+    <select id="selectByExpireStatus" resultType="com.gig.collide.domain.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <choose>
+                <when test="type == 'EXPIRING_SOON'">
+                    AND status = 'ACTIVE'
+                    AND expire_time IS NOT NULL
+                    AND expire_time BETWEEN NOW() AND #{beforeTime}
+                </when>
+                <when test="type == 'EXPIRED'">
+                    AND status = 'ACTIVE'
+                    AND expire_time IS NOT NULL
+                    <![CDATA[
+                    AND expire_time < NOW()
+                    ]]>
+                </when>
+            </choose>
+        </where>
+        ORDER BY expire_time ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+        <!-- 使用索引: idx_expire_time (expire_time ASC, status) -->
+    </select>
+
+    <!-- 更新购买记录状态 -->
+    <update id="updatePurchaseStatus">
+        UPDATE t_user_content_purchase
+        SET status = #{status}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 更新访问统计 -->
+    <update id="updateAccessStats">
+        UPDATE t_user_content_purchase
+        SET access_count = #{accessCount}, 
+            last_access_time = #{lastAccessTime}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 批量更新购买记录状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_user_content_purchase
+        SET status = #{status}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <!-- 使用主键索引进行批量更新 -->
+    </update>
+
+    <!-- 批量处理过期记录 -->
+    <update id="batchExpirePurchases">
+        UPDATE t_user_content_purchase
+        SET status = 'EXPIRED'
+        WHERE status = 'ACTIVE'
+        AND expire_time IS NOT NULL
+        <![CDATA[
+        AND expire_time < #{beforeTime}
+        ]]>
+        <!-- 使用索引: idx_expire_time (expire_time ASC, status) -->
+    </update>
+
+    <!-- 软删除购买记录 -->
+    <update id="softDeletePurchase">
+        UPDATE t_user_content_purchase
+        SET status = 'DELETED'
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 批量软删除购买记录 -->
+    <update id="batchSoftDeletePurchases">
+        UPDATE t_user_content_purchase
+        SET status = 'DELETED'
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <!-- 使用主键索引进行批量更新 -->
+    </update>
+
+</mapper>

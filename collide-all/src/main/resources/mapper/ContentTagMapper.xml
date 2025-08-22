@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.mapper.ContentTagMapper">
+
+    <!-- 内容标签关联列表查询（Controller专用） -->
+    <select id="selectContentTagList" resultType="com.gig.collide.domain.ContentTag">
+        SELECT * FROM t_content_tag
+        <![CDATA[
+        WHERE 1=1
+        ]]>
+        <if test="contentId != null">
+            <![CDATA[
+            AND content_id = #{contentId}
+            ]]>
+        </if>
+        <if test="tagId != null">
+            <![CDATA[
+            AND tag_id = #{tagId}
+            ]]>
+        </if>
+
+        <if test="keyword != null and keyword != ''">
+            <![CDATA[
+            AND (
+                content_id IN (SELECT id FROM t_content WHERE title LIKE CONCAT('%', #{keyword}, '%'))
+                OR tag_id IN (SELECT id FROM t_tag WHERE name LIKE CONCAT('%', #{keyword}, '%'))
+            )
+            ]]>
+        </if>
+        <choose>
+            <when test="orderBy == 'contentId' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY content_id ASC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'contentId'">
+                <![CDATA[
+                ORDER BY content_id DESC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'tagId' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY tag_id ASC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'tagId'">
+                <![CDATA[
+                ORDER BY tag_id DESC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'updateTime' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY update_time ASC
+                ]]>
+            </when>
+            <when test="orderBy == 'updateTime'">
+                <![CDATA[
+                ORDER BY update_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'createTime' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY create_time ASC
+                ]]>
+            </when>
+            <otherwise>
+                <![CDATA[
+                ORDER BY create_time DESC
+                ]]>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取内容的标签列表 -->
+    <select id="selectByContentId" resultType="com.gig.collide.domain.ContentTag">
+        SELECT * FROM t_content_tag 
+        <![CDATA[
+        WHERE content_id = #{contentId}
+        ORDER BY create_time DESC
+        ]]>
+    </select>
+
+    <!-- 获取标签的内容列表 -->
+    <select id="selectByTagId" resultType="com.gig.collide.domain.ContentTag">
+        SELECT * FROM t_content_tag 
+        <![CDATA[
+        WHERE tag_id = #{tagId}
+        ORDER BY create_time DESC
+        ]]>
+    </select>
+
+    <!-- 检查内容是否已有此标签 -->
+    <select id="countByContentIdAndTagId" resultType="int">
+        SELECT COUNT(*) FROM t_content_tag 
+        <![CDATA[
+        WHERE content_id = #{contentId} AND tag_id = #{tagId}
+        ]]>
+    </select>
+
+    <!-- 批量删除内容的所有标签 -->
+    <delete id="deleteByContentId">
+        DELETE FROM t_content_tag 
+        <![CDATA[
+        WHERE content_id = #{contentId}
+        ]]>
+    </delete>
+
+    <!-- 批量删除标签的所有关联 -->
+    <delete id="deleteByTagId">
+        DELETE FROM t_content_tag 
+        <![CDATA[
+        WHERE tag_id = #{tagId}
+        ]]>
+    </delete>
+
+    <!-- 统计标签被使用的内容数量 -->
+    <select id="countContentsByTagId" resultType="int">
+        SELECT COUNT(DISTINCT content_id) FROM t_content_tag 
+        <![CDATA[
+        WHERE tag_id = #{tagId}
+        ]]>
+    </select>
+
+    <!-- 统计内容的标签数量 -->
+    <select id="countTagsByContentId" resultType="int">
+        SELECT COUNT(*) FROM t_content_tag 
+        <![CDATA[
+        WHERE content_id = #{contentId}
+        ]]>
+    </select>
+
+    <!-- 批量获取内容标签关联信息 - 覆盖索引优化 -->
+    <select id="getContentTagSummary" resultType="map">
+        SELECT 
+            content_id,
+            tag_id,
+            create_time
+        FROM t_content_tag 
+        <![CDATA[
+        WHERE content_id IN
+        ]]>
+        <foreach collection="contentIds" item="contentId" open="(" separator="," close=")">
+            #{contentId}
+        </foreach>
+        <![CDATA[
+        ORDER BY content_id, create_time DESC
+        ]]>
+    </select>
+
+    <!-- 获取最新的内容标签关联 - 覆盖索引优化 -->
+    <select id="getRecentContentTags" resultType="map">
+        SELECT 
+            content_id,
+            tag_id,
+            create_time
+        FROM t_content_tag 
+        <![CDATA[
+        ORDER BY create_time DESC
+        ]]>
+        <if test="limit != null">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+</mapper> 

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.MessageSessionMapper">
+
+    <!-- 基础 ResultMap -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.domain.MessageSession">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="other_user_id" property="otherUserId"/>
+        <result column="last_message_id" property="lastMessageId"/>
+        <result column="last_message_time" property="lastMessageTime"/>
+        <result column="unread_count" property="unreadCount"/>
+        <result column="is_archived" property="isArchived"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据用户ID和对方用户ID查询会话 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引直接匹配 -->
+    <select id="findByUserIds" resultMap="BaseResultMap">
+        SELECT * FROM t_message_session
+        WHERE user_id = #{userId} AND other_user_id = #{otherUserId}
+    </select>
+
+    <!-- 查询用户的会话列表 -->
+    <!-- 索引使用: idx_user_sessions_optimized(user_id, is_archived, last_message_time DESC, unread_count) - 会话列表优化 -->
+    <select id="findUserSessions" resultMap="BaseResultMap">
+        SELECT * FROM t_message_session
+        WHERE user_id = #{userId}
+        <if test="isArchived != null">
+            AND is_archived = #{isArchived}
+        </if>
+        <if test="hasUnread != null and hasUnread == true">
+            <![CDATA[
+            AND unread_count > 0
+            ]]>
+        </if>
+        <if test="hasUnread != null and hasUnread == false">
+            AND unread_count = 0
+        </if>
+        <choose>
+            <when test="orderBy == 'lastMessageTime' and orderDirection == 'ASC'">
+                ORDER BY last_message_time ASC
+            </when>
+            <when test="orderBy == 'lastMessageTime'">
+                ORDER BY last_message_time DESC
+            </when>
+            <when test="orderBy == 'createTime' and orderDirection == 'ASC'">
+                ORDER BY create_time ASC
+            </when>
+            <when test="orderBy == 'createTime'">
+                ORDER BY create_time DESC
+            </when>
+            <when test="orderBy == 'updateTime' and orderDirection == 'ASC'">
+                ORDER BY update_time ASC
+            </when>
+            <when test="orderBy == 'updateTime'">
+                ORDER BY update_time DESC
+            </when>
+            <when test="orderBy == 'unreadCount' and orderDirection == 'ASC'">
+                ORDER BY unread_count ASC
+            </when>
+            <when test="orderBy == 'unreadCount'">
+                ORDER BY unread_count DESC
+            </when>
+            <otherwise>
+                ORDER BY last_message_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 查询用户的活跃会话 -->
+    <!-- 索引使用: idx_active_sessions_time(user_id, last_message_time DESC) - 活跃会话时间优化 -->
+    <select id="findActiveSessions" resultMap="BaseResultMap">
+        SELECT * FROM t_message_session
+        WHERE user_id = #{userId}
+        <if test="sinceTime != null">
+            <![CDATA[
+            AND last_message_time >= #{sinceTime}
+            ]]>
+        </if>
+        ORDER BY last_message_time DESC
+    </select>
+
+    <!-- 统计用户的未读会话数 -->
+    <!-- 索引使用: idx_unread_sessions_count(user_id, unread_count) - 未读会话统计优化 -->
+    <select id="countUnreadSessions" resultType="java.lang.Long">
+        <![CDATA[
+        SELECT COUNT(*) FROM t_message_session
+        WHERE user_id = #{userId} AND unread_count > 0
+        ]]>
+    </select>
+
+    <!-- 统计用户的总会话数 -->
+    <!-- 索引使用: idx_user_sessions_optimized(user_id, is_archived) - 会话总数统计优化 -->
+    <select id="countUserSessions" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_message_session
+        WHERE user_id = #{userId}
+        <if test="isArchived != null">
+            AND is_archived = #{isArchived}
+        </if>
+    </select>
+
+    <!-- 更新会话的最后消息信息 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引定位更新 -->
+    <update id="updateLastMessage">
+        UPDATE t_message_session 
+        SET last_message_id = #{lastMessageId}, 
+            last_message_time = #{lastMessageTime},
+            update_time = NOW()
+        WHERE user_id = #{userId} AND other_user_id = #{otherUserId}
+    </update>
+
+    <!-- 增加会话的未读计数 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引定位更新 -->
+    <update id="incrementUnreadCount">
+        UPDATE t_message_session 
+        SET unread_count = unread_count + 1,
+            update_time = NOW()
+        WHERE user_id = #{userId} AND other_user_id = #{otherUserId}
+    </update>
+
+    <!-- 清零会话的未读计数 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引定位更新 -->
+    <update id="clearUnreadCount">
+        UPDATE t_message_session 
+        SET unread_count = 0,
+            update_time = NOW()
+        WHERE user_id = #{userId} AND other_user_id = #{otherUserId}
+    </update>
+
+    <!-- 更新会话归档状态 -->
+    <!-- 索引使用: PRIMARY KEY(id) - 主键直接更新 -->
+    <update id="updateArchiveStatus">
+        UPDATE t_message_session 
+        SET is_archived = #{isArchived},
+            update_time = NOW()
+        WHERE id = #{sessionId}
+    </update>
+
+    <!-- 创建或更新会话信息 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引UPSERT操作 -->
+    <insert id="insertOrUpdate">
+        INSERT INTO t_message_session (
+            user_id, other_user_id, last_message_id, last_message_time, 
+            unread_count, is_archived, create_time, update_time
+        ) VALUES (
+            #{userId}, #{otherUserId}, #{lastMessageId}, #{lastMessageTime},
+            0, 0, NOW(), NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+            last_message_id = #{lastMessageId},
+            last_message_time = #{lastMessageTime},
+            update_time = NOW()
+    </insert>
+
+    <!-- 删除空会话（没有消息的会话） -->
+    <!-- 索引使用: idx_last_message_ref(last_message_id) + idx_session_cleanup - 关联查询清理 -->
+    <delete id="deleteEmptySessions">
+        DELETE FROM t_message_session 
+        WHERE last_message_id IS NULL 
+           OR last_message_id NOT IN (
+               SELECT id FROM t_message WHERE status != 'deleted'
+           )
+    </delete>
+
+    <!-- 删除指定时间前的归档会话 -->
+    <!-- 索引使用: idx_session_cleanup(is_archived, update_time) - 归档会话清理优化 -->
+    <delete id="deleteArchivedSessions">
+        DELETE FROM t_message_session 
+        <![CDATA[
+        WHERE is_archived = 1 AND update_time < #{beforeTime}
+        ]]>
+    </delete>
+
+</mapper>

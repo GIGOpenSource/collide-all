@@ -1,0 +1,232 @@
+2025-08-18 21:09:36.091 [main] INFO  com.gig.collide.CollideAllApplication - Starting CollideAllApplication using Java 21.0.8 with PID 9196 (E:\collide-all\target\classes started by GIG-Java in E:\collide-all)
+2025-08-18 21:09:36.092 [main] DEBUG com.gig.collide.CollideAllApplication - Running with Spring Boot v3.2.2, Spring v6.1.3
+2025-08-18 21:09:36.092 [main] INFO  com.gig.collide.CollideAllApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-18 21:09:37.017 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-08-18 21:09:37.018 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-08-18 21:09:37.058 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 22 ms. Found 0 JPA repository interfaces.
+2025-08-18 21:09:37.068 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-08-18 21:09:37.069 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-08-18 21:09:37.083 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 Redis repository interfaces.
+2025-08-18 21:09:37.142 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\AdMapper.class]
+2025-08-18 21:09:37.142 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\CategoryMapper.class]
+2025-08-18 21:09:37.142 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\CommentMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentChapterMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentPaymentMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentTagMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\FavoriteMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\FollowMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\GoodsMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\HotSearchMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\LikeMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\MessageMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\MessageSessionMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\MessageSettingMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\OrderMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\PaymentConfigMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\PaymentMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\SearchHistoryMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\SocialDynamicMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\TagMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\UserContentPurchaseMapper.class]
+2025-08-18 21:09:37.143 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\UserInterestTagMapper.class]
+2025-08-18 21:09:37.144 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'adMapper' and 'com.gig.collide.mapper.AdMapper' mapperInterface
+2025-08-18 21:09:37.146 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'adMapper'.
+2025-08-18 21:09:37.146 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'categoryMapper' and 'com.gig.collide.mapper.CategoryMapper' mapperInterface
+2025-08-18 21:09:37.146 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'categoryMapper'.
+2025-08-18 21:09:37.146 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'commentMapper' and 'com.gig.collide.mapper.CommentMapper' mapperInterface
+2025-08-18 21:09:37.147 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'commentMapper'.
+2025-08-18 21:09:37.147 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentChapterMapper' and 'com.gig.collide.mapper.ContentChapterMapper' mapperInterface
+2025-08-18 21:09:37.147 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentChapterMapper'.
+2025-08-18 21:09:37.147 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentMapper' and 'com.gig.collide.mapper.ContentMapper' mapperInterface
+2025-08-18 21:09:37.147 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentMapper'.
+2025-08-18 21:09:37.147 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentPaymentMapper' and 'com.gig.collide.mapper.ContentPaymentMapper' mapperInterface
+2025-08-18 21:09:37.148 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentPaymentMapper'.
+2025-08-18 21:09:37.148 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentTagMapper' and 'com.gig.collide.mapper.ContentTagMapper' mapperInterface
+2025-08-18 21:09:37.148 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentTagMapper'.
+2025-08-18 21:09:37.148 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'favoriteMapper' and 'com.gig.collide.mapper.FavoriteMapper' mapperInterface
+2025-08-18 21:09:37.148 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'favoriteMapper'.
+2025-08-18 21:09:37.148 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'followMapper' and 'com.gig.collide.mapper.FollowMapper' mapperInterface
+2025-08-18 21:09:37.148 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'followMapper'.
+2025-08-18 21:09:37.149 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'goodsMapper' and 'com.gig.collide.mapper.GoodsMapper' mapperInterface
+2025-08-18 21:09:37.149 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'goodsMapper'.
+2025-08-18 21:09:37.149 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'hotSearchMapper' and 'com.gig.collide.mapper.HotSearchMapper' mapperInterface
+2025-08-18 21:09:37.149 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'hotSearchMapper'.
+2025-08-18 21:09:37.149 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'likeMapper' and 'com.gig.collide.mapper.LikeMapper' mapperInterface
+2025-08-18 21:09:37.149 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'likeMapper'.
+2025-08-18 21:09:37.149 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'messageMapper' and 'com.gig.collide.mapper.MessageMapper' mapperInterface
+2025-08-18 21:09:37.150 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'messageMapper'.
+2025-08-18 21:09:37.150 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'messageSessionMapper' and 'com.gig.collide.mapper.MessageSessionMapper' mapperInterface
+2025-08-18 21:09:37.150 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'messageSessionMapper'.
+2025-08-18 21:09:37.150 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'messageSettingMapper' and 'com.gig.collide.mapper.MessageSettingMapper' mapperInterface
+2025-08-18 21:09:37.150 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'messageSettingMapper'.
+2025-08-18 21:09:37.150 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'orderMapper' and 'com.gig.collide.mapper.OrderMapper' mapperInterface
+2025-08-18 21:09:37.151 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'orderMapper'.
+2025-08-18 21:09:37.151 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'paymentConfigMapper' and 'com.gig.collide.mapper.PaymentConfigMapper' mapperInterface
+2025-08-18 21:09:37.152 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'paymentConfigMapper'.
+2025-08-18 21:09:37.152 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'paymentMapper' and 'com.gig.collide.mapper.PaymentMapper' mapperInterface
+2025-08-18 21:09:37.152 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'paymentMapper'.
+2025-08-18 21:09:37.152 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'searchHistoryMapper' and 'com.gig.collide.mapper.SearchHistoryMapper' mapperInterface
+2025-08-18 21:09:37.153 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'searchHistoryMapper'.
+2025-08-18 21:09:37.153 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'socialDynamicMapper' and 'com.gig.collide.mapper.SocialDynamicMapper' mapperInterface
+2025-08-18 21:09:37.153 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'socialDynamicMapper'.
+2025-08-18 21:09:37.153 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'tagMapper' and 'com.gig.collide.mapper.TagMapper' mapperInterface
+2025-08-18 21:09:37.154 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'tagMapper'.
+2025-08-18 21:09:37.154 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'userContentPurchaseMapper' and 'com.gig.collide.mapper.UserContentPurchaseMapper' mapperInterface
+2025-08-18 21:09:37.154 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'userContentPurchaseMapper'.
+2025-08-18 21:09:37.154 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'userInterestTagMapper' and 'com.gig.collide.mapper.UserInterestTagMapper' mapperInterface
+2025-08-18 21:09:37.154 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'userInterestTagMapper'.
+2025-08-18 21:09:37.155 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: java.lang.IllegalArgumentException: Invalid value type for attribute 'factoryBeanObjectType': java.lang.String
+2025-08-18 21:09:37.164 [main] INFO  o.s.b.a.logging.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-08-18 21:09:37.178 [main] ERROR org.springframework.boot.SpringApplication - Application run failed
+java.lang.IllegalArgumentException: Invalid value type for attribute 'factoryBeanObjectType': java.lang.String
+	at org.springframework.beans.factory.support.FactoryBeanRegistrySupport.getTypeForFactoryBeanFromAttributes(FactoryBeanRegistrySupport.java:86)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.getTypeForFactoryBean(AbstractAutowireCapableBeanFactory.java:836)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isTypeMatch(AbstractBeanFactory.java:620)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:575)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:534)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:138)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:788)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:606)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:334)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
+	at com.gig.collide.CollideAllApplication.main(CollideAllApplication.java:28)
+2025-08-18 21:09:37.179 [main] ERROR com.gig.collide.CollideAllApplication - 应用启动失败!
+java.lang.IllegalArgumentException: Invalid value type for attribute 'factoryBeanObjectType': java.lang.String
+	at org.springframework.beans.factory.support.FactoryBeanRegistrySupport.getTypeForFactoryBeanFromAttributes(FactoryBeanRegistrySupport.java:86)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.getTypeForFactoryBean(AbstractAutowireCapableBeanFactory.java:836)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isTypeMatch(AbstractBeanFactory.java:620)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:575)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:534)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:138)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:788)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:606)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:334)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
+	at com.gig.collide.CollideAllApplication.main(CollideAllApplication.java:28)
+2025-08-18 21:17:56.738 [main] INFO  com.gig.collide.CollideAllApplication - Starting CollideAllApplication using Java 21.0.8 with PID 7808 (E:\collide-all\target\classes started by GIG-Java in E:\collide-all)
+2025-08-18 21:17:56.739 [main] DEBUG com.gig.collide.CollideAllApplication - Running with Spring Boot v3.2.2, Spring v6.1.3
+2025-08-18 21:17:56.739 [main] INFO  com.gig.collide.CollideAllApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-18 21:17:57.663 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-08-18 21:17:57.665 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-08-18 21:17:57.694 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 23 ms. Found 0 JPA repository interfaces.
+2025-08-18 21:17:57.703 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-08-18 21:17:57.704 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-08-18 21:17:57.721 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 Redis repository interfaces.
+2025-08-18 21:17:57.788 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\AdMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\CategoryMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\CommentMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentChapterMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentPaymentMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\ContentTagMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\FavoriteMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\FollowMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\GoodsMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\HotSearchMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\LikeMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\MessageMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\MessageSessionMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\MessageSettingMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\OrderMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\PaymentConfigMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\PaymentMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\SearchHistoryMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\SocialDynamicMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\TagMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\UserContentPurchaseMapper.class]
+2025-08-18 21:17:57.789 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Identified candidate component class: file [E:\collide-all\target\classes\com\gig\collide\mapper\UserInterestTagMapper.class]
+2025-08-18 21:17:57.791 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'adMapper' and 'com.gig.collide.mapper.AdMapper' mapperInterface
+2025-08-18 21:17:57.794 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'adMapper'.
+2025-08-18 21:17:57.794 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'categoryMapper' and 'com.gig.collide.mapper.CategoryMapper' mapperInterface
+2025-08-18 21:17:57.794 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'categoryMapper'.
+2025-08-18 21:17:57.794 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'commentMapper' and 'com.gig.collide.mapper.CommentMapper' mapperInterface
+2025-08-18 21:17:57.795 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'commentMapper'.
+2025-08-18 21:17:57.795 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentChapterMapper' and 'com.gig.collide.mapper.ContentChapterMapper' mapperInterface
+2025-08-18 21:17:57.795 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentChapterMapper'.
+2025-08-18 21:17:57.795 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentMapper' and 'com.gig.collide.mapper.ContentMapper' mapperInterface
+2025-08-18 21:17:57.795 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentMapper'.
+2025-08-18 21:17:57.795 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentPaymentMapper' and 'com.gig.collide.mapper.ContentPaymentMapper' mapperInterface
+2025-08-18 21:17:57.796 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentPaymentMapper'.
+2025-08-18 21:17:57.796 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'contentTagMapper' and 'com.gig.collide.mapper.ContentTagMapper' mapperInterface
+2025-08-18 21:17:57.796 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'contentTagMapper'.
+2025-08-18 21:17:57.796 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'favoriteMapper' and 'com.gig.collide.mapper.FavoriteMapper' mapperInterface
+2025-08-18 21:17:57.796 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'favoriteMapper'.
+2025-08-18 21:17:57.796 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'followMapper' and 'com.gig.collide.mapper.FollowMapper' mapperInterface
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'followMapper'.
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'goodsMapper' and 'com.gig.collide.mapper.GoodsMapper' mapperInterface
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'goodsMapper'.
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'hotSearchMapper' and 'com.gig.collide.mapper.HotSearchMapper' mapperInterface
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'hotSearchMapper'.
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'likeMapper' and 'com.gig.collide.mapper.LikeMapper' mapperInterface
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'likeMapper'.
+2025-08-18 21:17:57.797 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'messageMapper' and 'com.gig.collide.mapper.MessageMapper' mapperInterface
+2025-08-18 21:17:57.798 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'messageMapper'.
+2025-08-18 21:17:57.798 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'messageSessionMapper' and 'com.gig.collide.mapper.MessageSessionMapper' mapperInterface
+2025-08-18 21:17:57.798 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'messageSessionMapper'.
+2025-08-18 21:17:57.798 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'messageSettingMapper' and 'com.gig.collide.mapper.MessageSettingMapper' mapperInterface
+2025-08-18 21:17:57.798 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'messageSettingMapper'.
+2025-08-18 21:17:57.798 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'orderMapper' and 'com.gig.collide.mapper.OrderMapper' mapperInterface
+2025-08-18 21:17:57.799 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'orderMapper'.
+2025-08-18 21:17:57.799 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'paymentConfigMapper' and 'com.gig.collide.mapper.PaymentConfigMapper' mapperInterface
+2025-08-18 21:17:57.799 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'paymentConfigMapper'.
+2025-08-18 21:17:57.799 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'paymentMapper' and 'com.gig.collide.mapper.PaymentMapper' mapperInterface
+2025-08-18 21:17:57.800 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'paymentMapper'.
+2025-08-18 21:17:57.800 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'searchHistoryMapper' and 'com.gig.collide.mapper.SearchHistoryMapper' mapperInterface
+2025-08-18 21:17:57.800 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'searchHistoryMapper'.
+2025-08-18 21:17:57.800 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'socialDynamicMapper' and 'com.gig.collide.mapper.SocialDynamicMapper' mapperInterface
+2025-08-18 21:17:57.800 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'socialDynamicMapper'.
+2025-08-18 21:17:57.800 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'tagMapper' and 'com.gig.collide.mapper.TagMapper' mapperInterface
+2025-08-18 21:17:57.801 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'tagMapper'.
+2025-08-18 21:17:57.801 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'userContentPurchaseMapper' and 'com.gig.collide.mapper.UserContentPurchaseMapper' mapperInterface
+2025-08-18 21:17:57.801 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'userContentPurchaseMapper'.
+2025-08-18 21:17:57.801 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Creating MapperFactoryBean with name 'userInterestTagMapper' and 'com.gig.collide.mapper.UserInterestTagMapper' mapperInterface
+2025-08-18 21:17:57.801 [main] DEBUG org.mybatis.spring.mapper.ClassPathMapperScanner - Enabling autowire by type for MapperFactoryBean with name 'userInterestTagMapper'.
+2025-08-18 21:17:57.803 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: java.lang.IllegalArgumentException: Invalid value type for attribute 'factoryBeanObjectType': java.lang.String
+2025-08-18 21:17:57.814 [main] INFO  o.s.b.a.logging.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-08-18 21:17:57.827 [main] ERROR org.springframework.boot.SpringApplication - Application run failed
+java.lang.IllegalArgumentException: Invalid value type for attribute 'factoryBeanObjectType': java.lang.String
+	at org.springframework.beans.factory.support.FactoryBeanRegistrySupport.getTypeForFactoryBeanFromAttributes(FactoryBeanRegistrySupport.java:86)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.getTypeForFactoryBean(AbstractAutowireCapableBeanFactory.java:836)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isTypeMatch(AbstractBeanFactory.java:620)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:575)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:534)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:138)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:788)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:606)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:334)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
+	at com.gig.collide.CollideAllApplication.main(CollideAllApplication.java:28)
+2025-08-18 21:17:57.828 [main] ERROR com.gig.collide.CollideAllApplication - 应用启动失败!
+java.lang.IllegalArgumentException: Invalid value type for attribute 'factoryBeanObjectType': java.lang.String
+	at org.springframework.beans.factory.support.FactoryBeanRegistrySupport.getTypeForFactoryBeanFromAttributes(FactoryBeanRegistrySupport.java:86)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.getTypeForFactoryBean(AbstractAutowireCapableBeanFactory.java:836)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isTypeMatch(AbstractBeanFactory.java:620)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:575)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:534)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:138)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:788)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:606)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:334)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
+	at com.gig.collide.CollideAllApplication.main(CollideAllApplication.java:28)

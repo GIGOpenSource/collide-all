@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.mapper.TagMapper">
+
+    <!-- 根据类型查询标签列表 -->
+    <select id="selectByTagType" resultType="com.gig.collide.domain.Tag">
+        SELECT * FROM t_tag 
+        <![CDATA[
+        WHERE tag_type = #{tagType} AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        ]]>
+    </select>
+
+    <!-- 按名称模糊搜索标签 - MySQL 8.0+ 全文搜索优化 -->
+    <select id="searchByName" resultType="com.gig.collide.domain.Tag">
+        SELECT * FROM t_tag 
+        <![CDATA[
+        WHERE MATCH(name) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE) 
+        AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        ]]>
+        <if test="limit != null">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- 按名称精确搜索标签 - 利用函数索引 -->
+    <select id="searchByNameExact" resultType="com.gig.collide.domain.Tag">
+        SELECT * FROM t_tag 
+        <![CDATA[
+        WHERE LOWER(name) = LOWER(#{keyword}) 
+        AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        ]]>
+        <if test="limit != null">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- 获取热门标签（按使用次数排序） -->
+    <select id="selectHotTags" resultType="com.gig.collide.domain.Tag">
+        SELECT * FROM t_tag 
+        <![CDATA[
+        WHERE status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        ]]>
+        <if test="limit != null">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- 增加标签使用次数 -->
+    <update id="increaseUsageCount">
+        UPDATE t_tag 
+        <![CDATA[
+        SET usage_count = usage_count + 1, update_time = NOW()
+        WHERE id = #{tagId}
+        ]]>
+    </update>
+
+    <!-- 检查标签名称是否存在 -->
+    <select id="countByNameAndType" resultType="int">
+        SELECT COUNT(*) FROM t_tag 
+        <![CDATA[
+        WHERE name = #{name} AND tag_type = #{tagType}
+        ]]>
+    </select>
+
+    <!-- 批量更新标签状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_tag 
+        <![CDATA[
+        SET status = #{status}, update_time = NOW()
+        WHERE id IN
+        ]]>
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </update>
+
+    <!-- 减少标签使用次数 -->
+    <update id="decreaseUsageCount">
+        UPDATE t_tag 
+        <![CDATA[
+        SET usage_count = CASE 
+            WHEN usage_count > 0 THEN usage_count - 1 
+            ELSE 0 
+        END, update_time = NOW()
+        WHERE id = #{tagId}
+        ]]>
+    </update>
+
+    <!-- 根据分类查询标签 -->
+    <select id="selectByCategoryId" resultType="com.gig.collide.domain.Tag">
+        SELECT * FROM t_tag 
+        <![CDATA[
+        WHERE category_id = #{categoryId} AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        ]]>
+    </select>
+
+    <!-- 获取标签使用统计 - 覆盖索引优化 -->
+    <select id="getTagUsageStats" resultType="map">
+        SELECT 
+            id,
+            name,
+            usage_count,
+            tag_type
+        FROM t_tag 
+        <![CDATA[
+        WHERE tag_type = #{tagType} AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        ]]>
+        <if test="limit != null">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- 批量获取标签基本信息 - 覆盖索引优化 -->
+    <select id="selectTagSummary" resultType="map">
+        SELECT 
+            id,
+            name,
+            tag_type,
+            usage_count,
+            status
+        FROM t_tag 
+        <![CDATA[
+        WHERE id IN
+        ]]>
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+        <![CDATA[
+        ORDER BY usage_count DESC
+        ]]>
+    </select>
+
+</mapper> 

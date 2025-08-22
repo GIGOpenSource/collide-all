@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collide-All API 模块化文档</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .module-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+
+        .module-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .module-description {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .api-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .api-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .api-link:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            text-decoration: none;
+        }
+
+        .api-link::before {
+            content: "📄";
+            margin-right: 0.5rem;
+        }
+
+        /* 模块特定颜色 */
+        .my-module .module-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .discovery-module .module-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .community-module .module-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .message-module .module-icon { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+        .profile-module .module-icon { background: linear-gradient(135deg, #fa709a, #fee140); }
+        .business-module .module-icon { background: linear-gradient(135deg, #a8edea, #fed6e3); }
+        .content-module .module-icon { background: linear-gradient(135deg, #ffecd2, #fcb69f); }
+        .system-module .module-icon { background: linear-gradient(135deg, #d299c2, #fef9d7); }
+
+        .stats {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .module-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Collide-All API 文档</h1>
+        <p>模块化API接口文档 - 按功能模块分组展示</p>
+    </div>
+
+    <div class="container">
+        <div class="stats">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">8</span>
+                    <div class="stat-label">功能模块</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">50+</span>
+                    <div class="stat-label">API接口</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">25+</span>
+                    <div class="stat-label">控制器</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">100%</span>
+                    <div class="stat-label">功能覆盖</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-grid">
+            <!-- 我的模块 -->
+            <div class="module-card my-module">
+                <div class="module-header">
+                    <div class="module-icon">👤</div>
+                    <div class="module-title">我的模块</div>
+                </div>
+                <div class="module-description">
+                    个人中心相关功能，包括VIP充值、用户信息管理、消息通知等个人专属功能。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/01-我的模块" class="api-link" target="_blank">
+                        我的模块 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/01-我的模块" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- 发现页播放页模块 -->
+            <div class="module-card discovery-module">
+                <div class="module-header">
+                    <div class="module-icon">🎬</div>
+                    <div class="module-title">发现页播放页</div>
+                </div>
+                <div class="module-description">
+                    内容浏览和播放功能，包括内容查询、章节管理、付费内容、收藏等核心功能。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/02-发现页播放页" class="api-link" target="_blank">
+                        发现页播放页 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/02-发现页播放页" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- 社区接口模块 -->
+            <div class="module-card community-module">
+                <div class="module-header">
+                    <div class="module-icon">🌐</div>
+                    <div class="module-title">社区接口</div>
+                </div>
+                <div class="module-description">
+                    社交互动功能，包括关注、点赞、评论、社交动态等用户互动相关功能。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/03-社区接口" class="api-link" target="_blank">
+                        社区接口 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/03-社区接口" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- 消息中心模块 -->
+            <div class="module-card message-module">
+                <div class="module-header">
+                    <div class="module-icon">💬</div>
+                    <div class="module-title">消息中心</div>
+                </div>
+                <div class="module-description">
+                    消息和通知功能，包括消息管理、消息会话、消息设置等通信相关功能。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/04-消息中心" class="api-link" target="_blank">
+                        消息中心 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/04-消息中心" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- Profile客态模块 -->
+            <div class="module-card profile-module">
+                <div class="module-header">
+                    <div class="module-icon">👥</div>
+                    <div class="module-title">Profile客态</div>
+                </div>
+                <div class="module-description">
+                    用户主页查看功能，提供查看其他用户公开信息、内容、关注关系等功能。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/05-Profile客态" class="api-link" target="_blank">
+                        Profile客态 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/05-Profile客态" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- 商业功能模块 -->
+            <div class="module-card business-module">
+                <div class="module-header">
+                    <div class="module-icon">💰</div>
+                    <div class="module-title">商业功能</div>
+                </div>
+                <div class="module-description">
+                    订单、支付、商品管理等商业功能，包括订单管理、支付功能、商品管理、钱包功能。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/06-商业功能" class="api-link" target="_blank">
+                        商业功能 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/06-商业功能" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- 内容管理模块 -->
+            <div class="module-card content-module">
+                <div class="module-header">
+                    <div class="module-icon">📝</div>
+                    <div class="module-title">内容管理</div>
+                </div>
+                <div class="module-description">
+                    内容创建和管理功能，包括分类管理、标签管理、广告管理等内容相关功能。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/07-内容管理" class="api-link" target="_blank">
+                        内容管理 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/07-内容管理" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- 系统功能模块 -->
+            <div class="module-card system-module">
+                <div class="module-header">
+                    <div class="module-icon">⚙️</div>
+                    <div class="module-title">系统功能</div>
+                </div>
+                <div class="module-description">
+                    认证、健康检查等基础功能，包括认证授权、健康检查、测试接口、任务管理。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/08-系统功能" class="api-link" target="_blank">
+                        系统功能 API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/08-系统功能" class="api-link" target="_blank">
+                        OpenAPI JSON
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 完整API文档 -->
+        <div style="margin-top: 3rem; text-align: center;">
+            <div class="module-card" style="max-width: 600px; margin: 0 auto;">
+                <div class="module-header" style="justify-content: center;">
+                    <div class="module-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">📚</div>
+                    <div class="module-title">完整API文档</div>
+                </div>
+                <div class="module-description">
+                    查看所有模块的完整API接口文档，包含所有功能的详细说明和示例。
+                </div>
+                <div class="api-links">
+                    <a href="/collide-all/doc.html#/99-完整API" class="api-link" target="_blank">
+                        完整API文档
+                    </a>
+                    <a href="/collide-all/v3/api-docs/99-完整API" class="api-link" target="_blank">
+                        完整OpenAPI JSON
+                    </a>
+                    <a href="/collide-all/doc.html" class="api-link" target="_blank">
+                        Knife4j 文档首页
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 GIG Team. Collide-All API Documentation v2.0.0</p>
+        <p>模块化API文档 - 让接口文档更清晰、更易用</p>
+    </div>
+
+    <script>
+        // 添加一些交互效果
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为卡片添加点击效果
+            const cards = document.querySelectorAll('.module-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // 统计数字动画
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                const finalValue = stat.textContent;
+                if (!isNaN(parseInt(finalValue))) {
+                    let currentValue = 0;
+                    const increment = parseInt(finalValue) / 20;
+                    const timer = setInterval(() => {
+                        currentValue += increment;
+                        if (currentValue >= parseInt(finalValue)) {
+                            stat.textContent = finalValue;
+                            clearInterval(timer);
+                        } else {
+                            stat.textContent = Math.floor(currentValue);
+                        }
+                    }, 50);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

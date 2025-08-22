@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: collide-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: collide
+      MYSQL_USER: collide
+      MYSQL_PASSWORD: collide123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/collide-simple-all.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - collide-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: collide-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - collide-network
+
+  # Collide All 应用
+  collide-all:
+    build: .
+    container_name: collide-all-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      - ROCKETMQ_NAMESRV=rocketmq-namesrv:9876
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - mysql
+      - redis
+      - rocketmq-broker
+      - elasticsearch
+    networks:
+      - collide-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+  rocketmq_namesrv_data:
+  rocketmq_namesrv_logs:
+  rocketmq_broker_data:
+  rocketmq_broker_logs:
+  elasticsearch_data:
+
+networks:
+  collide-network:
+    driver: bridge

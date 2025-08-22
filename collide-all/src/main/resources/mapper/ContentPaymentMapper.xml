@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.ContentPaymentMapper">
+
+    <!-- 付费配置列表查询（Controller专用） -->
+    <select id="selectContentPaymentList" resultType="com.gig.collide.domain.ContentPayment">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_payment
+        WHERE 1=1
+        <if test="contentId != null">
+            AND content_id = #{contentId}
+        </if>
+        <if test="configType != null and configType != ''">
+            AND payment_type = #{configType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="isEnabled != null">
+            AND status = CASE WHEN #{isEnabled} = true THEN 'ACTIVE' ELSE 'INACTIVE' END
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                content_id IN (SELECT id FROM t_content WHERE title LIKE CONCAT('%', #{keyword}, '%'))
+                OR payment_type LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <choose>
+            <when test="orderBy == 'contentId' and orderDirection == 'ASC'">
+                ORDER BY content_id ASC, create_time DESC
+            </when>
+            <when test="orderBy == 'contentId'">
+                ORDER BY content_id DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'coinPrice' and orderDirection == 'ASC'">
+                ORDER BY coin_price ASC, create_time DESC
+            </when>
+            <when test="orderBy == 'coinPrice'">
+                ORDER BY coin_price DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'updateTime' and orderDirection == 'ASC'">
+                ORDER BY update_time ASC
+            </when>
+            <when test="orderBy == 'updateTime'">
+                ORDER BY update_time DESC
+            </when>
+            <when test="orderBy == 'createTime' and orderDirection == 'ASC'">
+                ORDER BY create_time ASC
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 基础字段定义 -->
+    <sql id="baseColumns">
+        id, content_id, payment_type, coin_price, original_price, vip_free, vip_only,
+        trial_enabled, trial_content, trial_word_count, is_permanent, valid_days,
+        total_sales, total_revenue, status, create_time, update_time
+    </sql>
+
+    <!-- 根据内容ID查询付费配置 - 使用唯一索引 uk_content_id -->
+    <select id="selectByContentId" resultType="com.gig.collide.domain.ContentPayment">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_payment
+        WHERE content_id = #{contentId}
+        <!-- 使用索引: uk_content_id -->
+    </select>
+
+    <!-- 通用条件查询付费配置列表 - 使用复合索引优化 -->
+    <select id="selectPaymentsByConditions" resultType="com.gig.collide.domain.ContentPayment">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_payment
+        <where>
+            <if test="paymentType != null and paymentType != ''">
+                AND payment_type = #{paymentType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="minPrice != null">
+                <![CDATA[
+                AND coin_price >= #{minPrice}
+                ]]>
+            </if>
+            <if test="maxPrice != null">
+                <![CDATA[
+                AND coin_price <= #{maxPrice}
+                ]]>
+            </if>
+            <if test="trialEnabled != null">
+                AND trial_enabled = #{trialEnabled}
+            </if>
+            <if test="isPermanent != null">
+                AND is_permanent = #{isPermanent}
+            </if>
+            <if test="hasDiscount != null and hasDiscount == true">
+                <![CDATA[
+                AND original_price IS NOT NULL AND coin_price < original_price
+                ]]>
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy == 'price' and orderDirection == 'DESC'">
+                ORDER BY coin_price DESC
+            </when>
+            <when test="orderBy == 'price'">
+                ORDER BY coin_price ASC
+            </when>
+            <when test="orderBy == 'salesCount' and orderDirection == 'ASC'">
+                ORDER BY total_sales ASC
+            </when>
+            <when test="orderBy == 'salesCount'">
+                ORDER BY total_sales DESC
+            </when>
+            <when test="orderBy == 'createTime' and orderDirection == 'ASC'">
+                ORDER BY create_time ASC
+            </when>
+            <when test="orderBy == 'createTime'">
+                ORDER BY create_time DESC
+            </when>
+            <when test="orderBy == 'revenue' and orderDirection == 'ASC'">
+                ORDER BY total_revenue ASC
+            </when>
+            <when test="orderBy == 'revenue'">
+                ORDER BY total_revenue DESC
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+        <if test="currentPage != null and pageSize != null">
+            LIMIT #{currentPage}, #{pageSize}
+        </if>
+        <!-- 使用索引: idx_payment_status, idx_price_range, idx_sales_stats -->
+    </select>
+
+    <!-- 推荐付费内容查询 - 使用复合索引优化 -->
+    <select id="selectRecommendedPayments" resultType="com.gig.collide.domain.ContentPayment">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_payment
+        <where>
+            AND status = 'ACTIVE'
+            <if test="paymentType != null and paymentType != ''">
+                AND payment_type = #{paymentType}
+            </if>
+            <if test="excludeContentIds != null and excludeContentIds.size() &gt; 0">
+                AND content_id NOT IN
+                <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
+                    #{contentId}
+                </foreach>
+            </if>
+        </where>
+        <choose>
+            <when test="strategy == 'HOT'">
+                ORDER BY total_sales DESC, total_revenue DESC
+            </when>
+            <when test="strategy == 'HIGH_VALUE'">
+                ORDER BY coin_price DESC
+            </when>
+            <when test="strategy == 'VALUE_FOR_MONEY'">
+                ORDER BY (total_sales / GREATEST(coin_price, 1)) DESC
+            </when>
+            <when test="strategy == 'NEW'">
+                ORDER BY create_time DESC
+            </when>
+            <otherwise>
+                ORDER BY total_sales DESC
+            </otherwise>
+        </choose>
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+        <!-- 使用索引: idx_sales_stats, idx_price_range, idx_payment_status -->
+    </select>
+
+    <!-- 更新付费配置状态 -->
+    <update id="updatePaymentStatus">
+        UPDATE t_content_payment
+        SET status = #{status}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 更新付费配置价格信息 -->
+    <update id="updatePaymentPrice">
+        UPDATE t_content_payment
+        SET coin_price = #{price},
+            original_price = #{originalPrice},
+            discount_start_time = #{discountStartTime},
+            discount_end_time = #{discountEndTime}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 更新销售统计 -->
+    <update id="updateSalesStats">
+        UPDATE t_content_payment
+        SET total_sales = total_sales + #{salesIncrement},
+            total_revenue = total_revenue + #{revenueIncrement}
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 批量更新状态 -->
+    <update id="batchUpdatePaymentStatus">
+        UPDATE t_content_payment
+        SET status = #{status}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <!-- 使用主键索引进行批量更新 -->
+    </update>
+
+    <!-- 软删除付费配置 -->
+    <update id="softDeletePayment">
+        UPDATE t_content_payment
+        SET status = 'DELETED'
+        WHERE id = #{id}
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 根据内容ID删除付费配置 -->
+    <delete id="deleteByContentId">
+        DELETE FROM t_content_payment
+        WHERE content_id = #{contentId}
+        <!-- 使用索引: uk_content_id -->
+    </delete>
+
+</mapper>

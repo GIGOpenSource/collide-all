@@ -1,0 +1,30 @@
+# 开发环境配置
+server:
+  port: 8080
+
+spring:
+  # 数据源配置 - MySQL
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.0.109:3306/collide?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+
+  # Redis配置
+  data:
+    redis:
+      host: 192.168.0.109
+      port: 6379
+      password:
+
+  # 日志配置
+  logging:
+    level:
+      com.gig.collide: debug
+      org.springframework: debug
+      org.mybatis: debug
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

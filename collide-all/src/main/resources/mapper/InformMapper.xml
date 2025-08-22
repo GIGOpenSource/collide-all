@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.InformMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.domain.Inform">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="app_name" property="appName" jdbcType="VARCHAR"/>
+        <result column="type_relation" property="typeRelation" jdbcType="VARCHAR"/>
+        <result column="user_type" property="userType" jdbcType="VARCHAR"/>
+        <result column="notification_content" property="notificationContent" jdbcType="LONGVARCHAR"/>
+        <result column="send_time" property="sendTime" jdbcType="TIMESTAMP"/>
+        <result column="is_deleted" property="isDeleted" jdbcType="CHAR"/>
+        <result column="is_sent" property="isSent" jdbcType="CHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, app_name, type_relation, user_type, notification_content, send_time, 
+        is_deleted, is_sent, create_time, update_time
+    </sql>
+
+    <!-- 分页查询通知 -->
+    <select id="queryInforms" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_inform
+        <where>
+            <if test="appName != null and appName != ''">
+                AND app_name = #{appName}
+            </if>
+            <if test="typeRelation != null and typeRelation != ''">
+                AND type_relation = #{typeRelation}
+            </if>
+            <if test="userType != null and userType != ''">
+                AND user_type = #{userType}
+            </if>
+            <if test="isDeleted != null and isDeleted != ''">
+                AND is_deleted = #{isDeleted}
+            </if>
+            <if test="isSent != null and isSent != ''">
+                AND is_sent = #{isSent}
+            </if>
+            <if test="startTime != null">
+                AND create_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取未发送的通知 -->
+    <select id="getUnsentInforms" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_inform
+        WHERE is_deleted = 'N' AND is_sent = 'N'
+        ORDER BY create_time ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取已发送的通知 -->
+    <select id="getSentInforms" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_inform
+        WHERE is_deleted = 'N' AND is_sent = 'Y'
+        <if test="startTime != null">
+            AND send_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND send_time &lt;= #{endTime}
+        </if>
+        ORDER BY send_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 统计通知数量 -->
+    <select id="countInforms" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_inform
+        <where>
+            <if test="appName != null and appName != ''">
+                AND app_name = #{appName}
+            </if>
+            <if test="typeRelation != null and typeRelation != ''">
+                AND type_relation = #{typeRelation}
+            </if>
+            <if test="userType != null and userType != ''">
+                AND user_type = #{userType}
+            </if>
+            <if test="isDeleted != null and isDeleted != ''">
+                AND is_deleted = #{isDeleted}
+            </if>
+            <if test="isSent != null and isSent != ''">
+                AND is_sent = #{isSent}
+            </if>
+        </where>
+    </select>
+
+    <!-- 批量更新通知状态 -->
+    <update id="batchUpdateSendStatus">
+        UPDATE t_inform
+        SET is_sent = #{isSent},
+            send_time = #{sendTime},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 获取通知统计信息 -->
+    <select id="getInformStatistics" resultType="java.util.Map">
+        SELECT 
+            'total' as key_name,
+            COUNT(*) as value
+        FROM t_inform
+        WHERE is_deleted = 'N'
+        
+        UNION ALL
+        
+        SELECT 
+            'sent' as key_name,
+            COUNT(*) as value
+        FROM t_inform
+        WHERE is_deleted = 'N' AND is_sent = 'Y'
+        
+        UNION ALL
+        
+        SELECT 
+            'unsent' as key_name,
+            COUNT(*) as value
+        FROM t_inform
+        WHERE is_deleted = 'N' AND is_sent = 'N'
+        
+        UNION ALL
+        
+        SELECT 
+            CONCAT('type_', type_relation) as key_name,
+            COUNT(*) as value
+        FROM t_inform
+        WHERE is_deleted = 'N'
+        GROUP BY type_relation
+        
+        UNION ALL
+        
+        SELECT 
+            CONCAT('app_', app_name) as key_name,
+            COUNT(*) as value
+        FROM t_inform
+        WHERE is_deleted = 'N'
+        GROUP BY app_name
+    </select>
+
+</mapper>

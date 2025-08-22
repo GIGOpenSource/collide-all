@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.ContentChapterMapper">
+
+    <!-- 基础字段定义 -->
+    <sql id="baseColumns">
+        id, content_id, chapter_num, title, content, word_count, status, create_time, update_time
+    </sql>
+
+    <!-- 通用条件查询章节列表 - 使用复合索引优化 -->
+    <select id="selectChaptersByConditions" resultType="com.gig.collide.domain.ContentChapter">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_chapter
+        <where>
+            <if test="contentId != null">
+                <![CDATA[
+                AND content_id = #{contentId}
+                ]]>
+            </if>
+            <if test="status != null and status != ''">
+                <![CDATA[
+                AND status = #{status}
+                ]]>
+            </if>
+            <if test="chapterNumStart != null">
+                <![CDATA[
+                AND chapter_num >= #{chapterNumStart}
+                ]]>
+            </if>
+            <if test="chapterNumEnd != null">
+                <![CDATA[
+                AND chapter_num <= #{chapterNumEnd}
+                ]]>
+            </if>
+            <if test="minWordCount != null">
+                <![CDATA[
+                AND word_count >= #{minWordCount}
+                ]]>
+            </if>
+            <if test="maxWordCount != null">
+                <![CDATA[
+                AND word_count <= #{maxWordCount}
+                ]]>
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy == 'chapterNum' and orderDirection == 'DESC'">
+                ORDER BY chapter_num DESC
+            </when>
+            <when test="orderBy == 'chapterNum'">
+                ORDER BY chapter_num ASC
+            </when>
+            <when test="orderBy == 'createTime' and orderDirection == 'ASC'">
+                ORDER BY create_time ASC
+            </when>
+            <when test="orderBy == 'createTime'">
+                ORDER BY create_time DESC
+            </when>
+            <when test="orderBy == 'updateTime' and orderDirection == 'ASC'">
+                ORDER BY update_time ASC
+            </when>
+            <when test="orderBy == 'updateTime'">
+                ORDER BY update_time DESC
+            </when>
+            <when test="orderBy == 'wordCount' and orderDirection == 'ASC'">
+                ORDER BY word_count ASC
+            </when>
+            <when test="orderBy == 'wordCount'">
+                ORDER BY word_count DESC
+            </when>
+            <otherwise>
+                ORDER BY chapter_num ASC
+            </otherwise>
+        </choose>
+        <if test="currentPage != null and pageSize != null">
+            LIMIT #{currentPage}, #{pageSize}
+        </if>
+        <!-- 使用索引: idx_content_status, idx_chapter_range, idx_word_count -->
+    </select>
+
+    <!-- 章节导航查询 - 使用复合索引 idx_chapter_range -->
+    <select id="selectChapterByNavigation" resultType="com.gig.collide.domain.ContentChapter">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_chapter
+        <![CDATA[
+        WHERE content_id = #{contentId}
+        ]]>
+        <choose>
+            <when test="direction == 'next'">
+                <![CDATA[
+                AND chapter_num > #{currentChapterNum}
+                AND status = 'PUBLISHED'
+                ORDER BY chapter_num ASC
+                LIMIT 1
+                ]]>
+            </when>
+            <when test="direction == 'previous'">
+                <![CDATA[
+                AND chapter_num < #{currentChapterNum}
+                AND status = 'PUBLISHED'
+                ORDER BY chapter_num DESC
+                LIMIT 1
+                ]]>
+            </when>
+            <when test="direction == 'first'">
+                <![CDATA[
+                AND status = 'PUBLISHED'
+                ORDER BY chapter_num ASC
+                LIMIT 1
+                ]]>
+            </when>
+            <when test="direction == 'last'">
+                <![CDATA[
+                AND status = 'PUBLISHED'
+                ORDER BY chapter_num DESC
+                LIMIT 1
+                ]]>
+            </when>
+        </choose>
+        <!-- 使用索引: idx_chapter_range (content_id, chapter_num ASC, status) -->
+    </select>
+
+    <!-- 搜索章节 - 使用函数索引 idx_title_search -->
+    <select id="searchChapters" resultType="com.gig.collide.domain.ContentChapter">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_chapter
+        <where>
+            <if test="keyword != null and keyword != ''">
+                <![CDATA[
+                AND (LOWER(title) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                OR LOWER(content) LIKE CONCAT('%', LOWER(#{keyword}), '%'))
+                ]]>
+            </if>
+            <if test="contentId != null">
+                <![CDATA[
+                AND content_id = #{contentId}
+                ]]>
+            </if>
+            <if test="status != null and status != ''">
+                <![CDATA[
+                AND status = #{status}
+                ]]>
+            </if>
+        </where>
+        <![CDATA[
+        ORDER BY create_time DESC
+        ]]>
+        <if test="currentPage != null and pageSize != null">
+            <![CDATA[
+            LIMIT #{currentPage}, #{pageSize}
+            ]]>
+        </if>
+        <!-- 使用索引: idx_title_search ((LOWER(title))) -->
+    </select>
+
+    <!-- 更新章节状态 -->
+    <update id="updateChapterStatus">
+        UPDATE t_content_chapter
+        <![CDATA[
+        SET status = #{status}
+        WHERE id = #{id}
+        ]]>
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 更新章节基本信息 -->
+    <update id="updateChapterInfo">
+        UPDATE t_content_chapter
+        <![CDATA[
+        SET title = #{title}, 
+            content = #{content}, 
+            word_count = #{wordCount}
+        WHERE id = #{id}
+        ]]>
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 批量更新章节状态 -->
+    <update id="batchUpdateChapterStatus">
+        UPDATE t_content_chapter
+        <![CDATA[
+        SET status = #{status}
+        WHERE id IN
+        ]]>
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <!-- 使用主键索引进行批量更新 -->
+    </update>
+
+    <!-- 软删除章节 -->
+    <update id="softDeleteChapter">
+        UPDATE t_content_chapter
+        <![CDATA[
+        SET status = 'DELETED'
+        WHERE id = #{id}
+        ]]>
+        <!-- 使用主键索引 -->
+    </update>
+
+    <!-- 批量软删除章节 -->
+    <update id="batchSoftDeleteChapters">
+        UPDATE t_content_chapter
+        <![CDATA[
+        SET status = 'DELETED'
+        WHERE id IN
+        ]]>
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <!-- 使用主键索引进行批量更新 -->
+    </update>
+
+    <!-- 删除内容的所有章节 -->
+    <delete id="deleteAllChaptersByContentId">
+        DELETE FROM t_content_chapter
+        WHERE content_id = #{contentId}
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
+    </delete>
+
+
+
+</mapper>

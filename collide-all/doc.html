@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collide-All 前台接口文档</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .nav {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .nav-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .nav-link {
+            display: block;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .section {
+            background: white;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .section-header h2 {
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .section-header p {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .api-item {
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .api-item:last-child {
+            border-bottom: none;
+        }
+        
+        .api-method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .method-get { background: #28a745; color: white; }
+        .method-post { background: #007bff; color: white; }
+        .method-put { background: #ffc107; color: black; }
+        .method-delete { background: #dc3545; color: white; }
+        
+        .api-path {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .api-description {
+            margin-bottom: 15px;
+            color: #6c757d;
+        }
+        
+        .api-params {
+            margin-bottom: 15px;
+        }
+        
+        .api-params h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        .param-table th,
+        .param-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .param-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .response-example {
+            background: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #6c757d;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .nav-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Collide-All 前台接口文档</h1>
+            <p>版本 1.0.0 | 基础URL: http://localhost:8080/collide-all</p>
+        </div>
+
+        <div class="nav">
+            <h2>快速导航</h2>
+            <div class="nav-links">
+                <a href="#user" class="nav-link">用户管理模块</a>
+                <a href="#tag" class="nav-link">标签管理模块</a>
+                <a href="#follow" class="nav-link">关注管理模块</a>
+                <a href="#content" class="nav-link">内容管理模块</a>
+                <a href="#search" class="nav-link">搜索服务模块</a>
+                <a href="#like" class="nav-link">点赞管理模块</a>
+                <a href="#favorite" class="nav-link">收藏管理模块</a>
+                <a href="#comment" class="nav-link">评论管理模块</a>
+                <a href="#social" class="nav-link">社交动态模块</a>
+            </div>
+        </div>
+
+        <div id="user" class="section">
+            <div class="section-header">
+                <h2>1. 用户管理模块</h2>
+                <p>用户注册、登录、信息管理等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/users/register</div>
+                <div class="api-description">用户注册</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "username": "testuser",
+  "password": "password123",
+  "email": "test@example.com",
+  "phone": "13800138000",
+  "nickname": "测试用户",
+  "avatar": "https://example.com/avatar.jpg"
+}</pre>
+                    </div>
+                </div>
+                
+                <div class="response-example">
+                    <h4>响应示例</h4>
+                    <div class="code-block">
+                        <pre>{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 123,
+    "username": "testuser",
+    "email": "test@example.com",
+    "phone": "13800138000",
+    "nickname": "测试用户",
+    "avatar": "https://example.com/avatar.jpg",
+    "status": "ACTIVE",
+    "createTime": "2024-01-01T00:00:00",
+    "updateTime": "2024-01-01T00:00:00"
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/users/login</div>
+                <div class="api-description">用户登录</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "username": "testuser",
+  "password": "password123",
+  "loginType": "USERNAME"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tag" class="section">
+            <div class="section-header">
+                <h2>2. 标签管理模块</h2>
+                <p>标签查询、管理等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-get">GET</span>
+                <div class="api-path">/api/v1/tags/list</div>
+                <div class="api-description">标签列表查询</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <table class="param-table">
+                        <thead>
+                            <tr>
+                                <th>参数名</th>
+                                <th>类型</th>
+                                <th>必填</th>
+                                <th>描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>tagType</td>
+                                <td>String</td>
+                                <td>否</td>
+                                <td>标签类型（CONTENT、USER、CATEGORY）</td>
+                            </tr>
+                            <tr>
+                                <td>status</td>
+                                <td>String</td>
+                                <td>否</td>
+                                <td>标签状态（ACTIVE、INACTIVE、DELETED）</td>
+                            </tr>
+                            <tr>
+                                <td>keyword</td>
+                                <td>String</td>
+                                <td>否</td>
+                                <td>关键词搜索</td>
+                            </tr>
+                            <tr>
+                                <td>currentPage</td>
+                                <td>Integer</td>
+                                <td>否</td>
+                                <td>当前页码（默认：1）</td>
+                            </tr>
+                            <tr>
+                                <td>pageSize</td>
+                                <td>Integer</td>
+                                <td>否</td>
+                                <td>页面大小（默认：20）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="follow" class="section">
+            <div class="section-header">
+                <h2>3. 关注管理模块</h2>
+                <p>用户关注、取消关注等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/follow/create</div>
+                <div class="api-description">关注用户</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "followerId": 1,
+  "followedId": 2,
+  "followerNickname": "用户A",
+  "followerAvatar": "https://example.com/avatar1.jpg",
+  "followedNickname": "用户B",
+  "followedAvatar": "https://example.com/avatar2.jpg",
+  "followType": "NORMAL"
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-delete">DELETE</span>
+                <div class="api-path">/api/v1/follow/{id}</div>
+                <div class="api-description">取消关注</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <p>id: 关注记录ID（路径参数）</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="content" class="section">
+            <div class="section-header">
+                <h2>4. 内容管理模块</h2>
+                <p>内容查询、章节管理等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-get">GET</span>
+                <div class="api-path">/api/v1/content/core/list</div>
+                <div class="api-description">内容列表查询</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <table class="param-table">
+                        <thead>
+                            <tr>
+                                <th>参数名</th>
+                                <th>类型</th>
+                                <th>必填</th>
+                                <th>描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>contentType</td>
+                                <td>String</td>
+                                <td>否</td>
+                                <td>内容类型（ARTICLE、VIDEO、AUDIO、IMAGE）</td>
+                            </tr>
+                            <tr>
+                                <td>categoryId</td>
+                                <td>Long</td>
+                                <td>否</td>
+                                <td>分类ID</td>
+                            </tr>
+                            <tr>
+                                <td>keyword</td>
+                                <td>String</td>
+                                <td>否</td>
+                                <td>关键词搜索</td>
+                            </tr>
+                            <tr>
+                                <td>currentPage</td>
+                                <td>Integer</td>
+                                <td>否</td>
+                                <td>当前页码（默认：1）</td>
+                            </tr>
+                            <tr>
+                                <td>pageSize</td>
+                                <td>Integer</td>
+                                <td>否</td>
+                                <td>页面大小（默认：20）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="search" class="section">
+            <div class="section-header">
+                <h2>5. 搜索服务模块</h2>
+                <p>内容搜索、搜索历史等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/search</div>
+                <div class="api-description">执行搜索</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "keyword": "搜索关键词",
+  "searchType": "MIXED",
+  "userId": 123,
+  "currentPage": 1,
+  "pageSize": 20,
+  "orderBy": "relevance",
+  "orderDirection": "DESC",
+  "filters": {
+    "categoryId": 1,
+    "dateRange": "7d",
+    "contentType": "NOVEL"
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="like" class="section">
+            <div class="section-header">
+                <h2>6. 点赞管理模块</h2>
+                <p>点赞、取消点赞等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/like/create</div>
+                <div class="api-description">点赞操作</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "userId": 123,
+  "targetId": 456,
+  "targetType": "CONTENT",
+  "likeType": "LIKE"
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-delete">DELETE</span>
+                <div class="api-path">/api/v1/like/{id}</div>
+                <div class="api-description">取消点赞</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <p>id: 点赞记录ID（路径参数）</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="favorite" class="section">
+            <div class="section-header">
+                <h2>7. 收藏管理模块</h2>
+                <p>添加收藏、移除收藏等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/favorite/add</div>
+                <div class="api-description">添加收藏</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "userId": 123,
+  "targetId": 456,
+  "targetType": "CONTENT",
+  "targetTitle": "收藏目标标题",
+  "targetImage": "https://example.com/image.jpg",
+  "note": "收藏备注"
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/favorite/remove</div>
+                <div class="api-description">移除收藏</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "userId": 123,
+  "targetId": 456,
+  "targetType": "CONTENT"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="comment" class="section">
+            <div class="section-header">
+                <h2>8. 评论管理模块</h2>
+                <p>评论查询、创建评论等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-get">GET</span>
+                <div class="api-path">/api/v1/comments/list</div>
+                <div class="api-description">评论列表查询</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <table class="param-table">
+                        <thead>
+                            <tr>
+                                <th>参数名</th>
+                                <th>类型</th>
+                                <th>必填</th>
+                                <th>描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>commentType</td>
+                                <td>String</td>
+                                <td>否</td>
+                                <td>评论类型（CONTENT、DYNAMIC）</td>
+                            </tr>
+                            <tr>
+                                <td>targetId</td>
+                                <td>Long</td>
+                                <td>否</td>
+                                <td>目标对象ID</td>
+                            </tr>
+                            <tr>
+                                <td>currentPage</td>
+                                <td>Integer</td>
+                                <td>否</td>
+                                <td>当前页码（默认：1）</td>
+                            </tr>
+                            <tr>
+                                <td>pageSize</td>
+                                <td>Integer</td>
+                                <td>否</td>
+                                <td>页面大小（默认：20）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="social" class="section">
+            <div class="section-header">
+                <h2>9. 社交动态模块</h2>
+                <p>发布动态、分享功能等接口</p>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/social/dynamics/create</div>
+                <div class="api-description">创建动态</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "userId": 123,
+  "content": "动态内容",
+  "dynamicType": "TEXT",
+  "mediaUrls": ["https://example.com/image1.jpg"],
+  "location": "位置信息",
+  "isPublic": true
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="api-item">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/api/v1/social/dynamics/share</div>
+                <div class="api-description">分享功能</div>
+                
+                <div class="api-params">
+                    <h4>请求参数</h4>
+                    <div class="code-block">
+                        <pre>{
+  "userId": 123,
+  "shareTargetId": 456,
+  "shareTargetType": "CONTENT",
+  "shareContent": "分享说明",
+  "sharePlatform": "INTERNAL"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3>接口规范说明</h3>
+            <p><strong>统一响应格式：</strong>所有API都使用统一的响应格式，包含code、message、data字段</p>
+            <p><strong>分页参数：</strong>currentPage从1开始，pageSize建议不超过100</p>
+            <p><strong>认证方式：</strong>Bearer Token，请求头：Authorization: Bearer &lt;token&gt;</p>
+            <p><strong>时间格式：</strong>ISO 8601标准格式 YYYY-MM-DDTHH:mm:ss</p>
+            <br>
+            <p>如有问题或建议，请联系开发团队</p>
+        </div>
+    </div>
+
+    <script>
+        // 平滑滚动到锚点
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 添加返回顶部功能
+        const backToTop = document.createElement('button');
+        backToTop.innerHTML = '↑';
+        backToTop.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        `;
+        
+        backToTop.addEventListener('mouseenter', () => {
+            backToTop.style.transform = 'scale(1.1)';
+        });
+        
+        backToTop.addEventListener('mouseleave', () => {
+            backToTop.style.transform = 'scale(1)';
+        });
+        
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        document.body.appendChild(backToTop);
+
+        // 显示/隐藏返回顶部按钮
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTop.style.display = 'block';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

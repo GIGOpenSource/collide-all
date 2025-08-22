@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.CommentMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, comment_type, target_id, parent_comment_id, content, user_id, user_nickname, user_avatar,
+        reply_to_user_id, reply_to_user_nickname, reply_to_user_avatar, like_count, reply_count,
+        status, create_time, update_time
+    </sql>
+
+    <!-- =================== 基础查询（优化版） =================== -->
+
+    <!-- 评论列表查询（Controller专用） -->
+    <select id="selectCommentList" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        <![CDATA[
+        WHERE 1=1
+        ]]>
+        <if test="commentType != null and commentType != ''">
+            <![CDATA[
+            AND LOWER(comment_type) = LOWER(#{commentType})
+            ]]>
+        </if>
+        <if test="targetId != null">
+            <![CDATA[
+            AND target_id = #{targetId}
+            ]]>
+        </if>
+        <if test="userId != null">
+            <![CDATA[
+            AND user_id = #{userId}
+            ]]>
+        </if>
+        <if test="parentId != null">
+            <![CDATA[
+            AND parent_comment_id = #{parentId}
+            ]]>
+        </if>
+        <if test="status != null and status != ''">
+            <![CDATA[
+            AND LOWER(status) = LOWER(#{status})
+            ]]>
+        </if>
+        <if test="keyword != null and keyword != ''">
+            <![CDATA[
+            AND (
+                content LIKE CONCAT('%', #{keyword}, '%')
+                OR user_nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR reply_to_user_nickname LIKE CONCAT('%', #{keyword}, '%')
+            )
+            ]]>
+        </if>
+        <choose>
+            <when test="orderBy == 'like_count' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY like_count ASC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'like_count'">
+                <![CDATA[
+                ORDER BY like_count DESC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'reply_count' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY reply_count ASC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'reply_count'">
+                <![CDATA[
+                ORDER BY reply_count DESC, create_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'update_time' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY update_time ASC
+                ]]>
+            </when>
+            <when test="orderBy == 'update_time'">
+                <![CDATA[
+                ORDER BY update_time DESC
+                ]]>
+            </when>
+            <when test="orderBy == 'create_time' and orderDirection == 'ASC'">
+                <![CDATA[
+                ORDER BY create_time ASC
+                ]]>
+            </when>
+            <otherwise>
+                <![CDATA[
+                ORDER BY create_time DESC
+                ]]>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据目标ID查询评论列表（使用 idx_target_status_time 索引） -->
+    <select id="selectTargetComments" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        <![CDATA[
+        WHERE target_id = #{targetId}
+        ]]>
+        <if test="commentType != null and commentType != ''">
+            <![CDATA[
+            AND LOWER(comment_type) = LOWER(#{commentType})
+            ]]>
+        </if>
+        <if test="parentCommentId != null">
+            <![CDATA[
+            AND parent_comment_id = #{parentCommentId}
+            ]]>
+        </if>
+        <if test="status != null and status != ''">
+            <![CDATA[
+            AND LOWER(status) = LOWER(#{status})
+            ]]>
+        </if>
+        <choose>
+            <when test="orderBy == 'like_count' and orderDirection == 'ASC'">
+                ORDER BY like_count ASC, create_time DESC
+            </when>
+            <when test="orderBy == 'like_count'">
+                ORDER BY like_count DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'reply_count' and orderDirection == 'ASC'">
+                ORDER BY reply_count ASC, create_time DESC
+            </when>
+            <when test="orderBy == 'reply_count'">
+                ORDER BY reply_count DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'update_time' and orderDirection == 'ASC'">
+                ORDER BY update_time ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time DESC
+            </when>
+            <when test="orderBy == 'create_time' and orderDirection == 'ASC'">
+                ORDER BY create_time ASC
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据目标ID分页查询评论（使用 idx_target_status_time 索引） -->
+    <select id="selectTargetCommentsPage" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+        <choose>
+            <when test="orderBy == 'like_count'">
+                ORDER BY like_count DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'reply_count'">
+                ORDER BY reply_count DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time DESC
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据用户ID分页查询评论（使用 idx_user_status_time 索引） -->
+    <select id="selectUserCommentsPage" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE user_id = #{userId}
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据用户ID分页查询回复（使用 idx_reply_user_status_time 索引） -->
+    <select id="selectUserRepliesPage" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE reply_to_user_id = #{replyToUserId}
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 搜索评论（使用全文索引 idx_content_fulltext） -->
+    <select id="searchComments" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND MATCH(content) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
+        </if>
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取热门评论（使用 idx_target_status_popularity 索引） -->
+    <select id="selectPopularComments" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE 1=1
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        AND LOWER(status) = 'normal'
+        <![CDATA[
+        AND like_count > 0
+        ORDER BY (like_count * 0.7 + reply_count * 0.3) DESC, create_time DESC
+        ]]>
+        <if test="limit != null and limit &gt; 0">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- 获取最新评论（使用 idx_create_time_status 索引） -->
+    <select id="selectLatestComments" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE 1=1
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        AND LOWER(status) = 'normal'
+        ORDER BY create_time DESC
+        <if test="limit != null and limit &gt; 0">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- 获取评论树形结构（使用 idx_parent_status_time 索引） -->
+    <select id="selectCommentTree" resultType="com.gig.collide.domain.Comment">
+        WITH RECURSIVE comment_tree AS (
+            -- 获取根评论（使用 idx_target_normal_time_desc 部分索引）
+            SELECT <include refid="Base_Column_List"/>, 0 as level
+            FROM t_comment
+            WHERE target_id = #{targetId}
+            <if test="commentType != null and commentType != ''">
+                AND LOWER(comment_type) = LOWER(#{commentType})
+            </if>
+            AND parent_comment_id = 0
+            AND LOWER(status) = 'normal'
+            
+            UNION ALL
+            
+            -- 递归获取子评论
+            SELECT c.<include refid="Base_Column_List"/>, ct.level + 1
+            FROM t_comment c
+            INNER JOIN comment_tree ct ON c.parent_comment_id = ct.id
+            WHERE LOWER(c.status) = 'normal'
+            <if test="maxDepth != null">
+                <![CDATA[
+                AND ct.level < #{maxDepth}
+                ]]>
+            </if>
+        )
+        SELECT <include refid="Base_Column_List"/>
+        FROM comment_tree
+        ORDER BY level ASC, create_time ASC
+    </select>
+
+    <!-- =================== 统计查询（优化版） =================== -->
+
+    <!-- 统计目标评论数量（使用 idx_target_status_time 索引） -->
+    <select id="countTargetComments" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_comment
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+    </select>
+
+    <!-- 统计用户评论数量（使用 idx_user_status_time 索引） -->
+    <select id="countUserComments" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_comment
+        WHERE user_id = #{userId}
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+    </select>
+
+    <!-- 统计评论的回复数（使用 idx_parent_status_time 索引） -->
+    <select id="countCommentReplies" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_comment
+        WHERE parent_comment_id = #{parentCommentId}
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+    </select>
+
+    <!-- 获取评论统计信息（使用复合索引优化） -->
+    <select id="selectCommentStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_count,
+            SUM(CASE WHEN LOWER(status) = 'normal' THEN 1 ELSE 0 END) as normal_count,
+            SUM(CASE WHEN LOWER(status) = 'hidden' THEN 1 ELSE 0 END) as hidden_count,
+            SUM(CASE WHEN LOWER(status) = 'deleted' THEN 1 ELSE 0 END) as deleted_count,
+            SUM(like_count) as total_like_count,
+            SUM(reply_count) as total_reply_count,
+            AVG(like_count) as avg_like_count,
+            MAX(like_count) as max_like_count,
+            COUNT(DISTINCT user_id) as unique_user_count
+        FROM t_comment
+        WHERE 1=1
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="startTime != null">
+            <![CDATA[
+            AND create_time >= #{startTime}
+            ]]>
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND create_time <= #{endTime}
+            ]]>
+        </if>
+    </select>
+
+    <!-- =================== 更新操作（优化版） =================== -->
+
+    <!-- 增加点赞数量（使用主键索引） -->
+    <update id="increaseLikeCount">
+        UPDATE t_comment
+        SET like_count = like_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{commentId}
+    </update>
+
+    <!-- 增加回复数量（使用主键索引） -->
+    <update id="increaseReplyCount">
+        UPDATE t_comment
+        SET reply_count = reply_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{commentId}
+    </update>
+
+    <!-- 批量更新评论状态（使用主键索引） -->
+    <update id="batchUpdateStatus">
+        UPDATE t_comment
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="commentIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 更新用户信息（使用 idx_user_status_time 索引） -->
+    <update id="updateUserInfo">
+        UPDATE t_comment
+        SET user_nickname = #{nickname},
+            user_avatar = #{avatar},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新回复目标用户信息（使用 idx_reply_user_status_time 索引） -->
+    <update id="updateReplyToUserInfo">
+        UPDATE t_comment
+        SET reply_to_user_nickname = #{nickname},
+            reply_to_user_avatar = #{avatar},
+            update_time = NOW()
+        WHERE reply_to_user_id = #{replyToUserId}
+    </update>
+
+    <!-- 批量删除目标评论（使用 idx_target_status_time 索引） -->
+    <update id="batchDeleteTargetComments">
+        UPDATE t_comment
+        SET status = 'DELETED',
+            update_time = NOW()
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        AND LOWER(status) != 'deleted'
+    </update>
+
+    <!-- =================== 高级查询（优化版） =================== -->
+
+    <!-- 根据时间范围查询评论（使用 idx_create_time_status 索引） -->
+    <select id="selectCommentsByTimeRange" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE 1=1
+        <if test="startTime != null">
+            <![CDATA[
+            AND create_time >= #{startTime}
+            ]]>
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND create_time <= #{endTime}
+            ]]>
+        </if>
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据点赞数范围查询评论（使用 idx_target_status_popularity 索引） -->
+    <select id="selectCommentsByLikeCountRange" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE 1=1
+        <if test="minLikeCount != null">
+            <![CDATA[
+            AND like_count >= #{minLikeCount}
+            ]]>
+        </if>
+        <if test="maxLikeCount != null">
+            <![CDATA[
+            AND like_count <= #{maxLikeCount}
+            ]]>
+        </if>
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <if test="!includeDeleted">
+            AND LOWER(status) != 'deleted'
+        </if>
+        ORDER BY like_count DESC, create_time DESC
+    </select>
+
+    <!-- 查询待审核评论（使用 idx_status_lower 函数索引） -->
+    <select id="selectPendingComments" resultType="com.gig.collide.domain.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE LOWER(status) = 'pending'
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        ORDER BY create_time ASC
+        <if test="limit != null and limit &gt; 0">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- 查询用户的回复关系（使用复合索引优化） -->
+    <select id="selectUserReplyRelations" resultType="java.util.Map">
+        SELECT 
+            user_id,
+            user_nickname,
+            reply_to_user_id,
+            reply_to_user_nickname,
+            COUNT(*) as reply_count
+        FROM t_comment
+        WHERE reply_to_user_id IS NOT NULL
+        AND reply_to_user_id != 0
+        <if test="userId != null">
+            AND (user_id = #{userId} OR reply_to_user_id = #{userId})
+        </if>
+        <if test="startTime != null">
+            <![CDATA[
+            AND create_time >= #{startTime}
+            ]]>
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND create_time <= #{endTime}
+            ]]>
+        </if>
+        AND LOWER(status) = 'normal'
+        GROUP BY user_id, user_nickname, reply_to_user_id, reply_to_user_nickname
+        ORDER BY reply_count DESC
+    </select>
+
+    <!-- 查询评论热度排行（使用 idx_target_status_popularity 索引） -->
+    <select id="selectCommentHotRanking" resultType="java.util.Map">
+        SELECT 
+            id,
+            content,
+            user_id,
+            user_nickname,
+            like_count,
+            reply_count,
+            (like_count * 0.7 + reply_count * 0.3) as hot_score,
+            create_time
+        FROM t_comment
+        WHERE 1=1
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="startTime != null">
+            <![CDATA[
+            AND create_time >= #{startTime}
+            ]]>
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND create_time <= #{endTime}
+            ]]>
+        </if>
+        AND LOWER(status) = 'normal'
+        <![CDATA[
+        AND (like_count > 0 OR reply_count > 0)
+        ORDER BY (like_count * 0.7 + reply_count * 0.3) DESC, create_time DESC
+        ]]>
+        <if test="limit != null and limit &gt; 0">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </select>
+
+    <!-- =================== 清理操作（优化版） =================== -->
+
+    <!-- 清理已删除的评论（使用 idx_update_time_status 索引） -->
+    <delete id="cleanDeletedComments">
+        DELETE FROM t_comment
+        WHERE LOWER(status) = 'deleted'
+        <![CDATA[
+        AND update_time < DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        ]]>
+        <if test="limit != null and limit &gt; 0">
+            <![CDATA[
+            LIMIT #{limit}
+            ]]>
+        </if>
+    </delete>
+
+</mapper> 
