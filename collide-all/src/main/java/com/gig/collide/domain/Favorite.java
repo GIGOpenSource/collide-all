@@ -85,17 +85,7 @@ public class Favorite {
     @TableField("status")
     private String status;
 
-    /**
-     * 取消原因（当状态为cancelled时记录）
-     */
-    @TableField("cancel_reason")
-    private String cancelReason;
 
-    /**
-     * 操作人ID（记录谁取消的收藏）
-     */
-    @TableField("operator_id")
-    private Long operatorId;
 
     /**
      * 创建时间

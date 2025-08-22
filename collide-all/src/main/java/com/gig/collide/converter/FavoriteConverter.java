@@ -38,6 +38,7 @@ public class FavoriteConverter {
         favorite.setFavoriteType(request.getFavoriteType());
         favorite.setTargetId(request.getTargetId());
         favorite.setTargetTitle(request.getTargetTitle());
+        favorite.setTargetCover(request.getTargetCover());
         favorite.setTargetAuthorId(request.getTargetAuthorId());
         favorite.setUserNickname(request.getUserNickname());
 
@@ -68,6 +69,7 @@ public class FavoriteConverter {
         response.setFavoriteType(entity.getFavoriteType());
         response.setTargetId(entity.getTargetId());
         response.setTargetTitle(entity.getTargetTitle());
+        response.setTargetCover(entity.getTargetCover());
         response.setTargetAuthorId(entity.getTargetAuthorId());
         response.setUserNickname(entity.getUserNickname());
         response.setStatus(entity.getStatus());

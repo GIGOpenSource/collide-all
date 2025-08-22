@@ -142,11 +142,13 @@ public class FavoriteServiceImpl implements FavoriteService {
         existingFavorite.setStatus("cancelled");
         existingFavorite.setUpdateTime(LocalDateTime.now());
 
-        // 设置取消原因和操作人信息
+        // 记录取消原因和操作人信息到日志（数据库表中无对应字段）
         if (StringUtils.hasText(cancelReason)) {
-            existingFavorite.setCancelReason(cancelReason);
+            log.info("收藏取消原因: {}", cancelReason);
         }
-        existingFavorite.setOperatorId(operatorId);
+        if (operatorId != null) {
+            log.info("操作人ID: {}", operatorId);
+        }
 
         int result = favoriteMapper.updateById(existingFavorite);
         if (result > 0) {
@@ -937,8 +939,8 @@ public class FavoriteServiceImpl implements FavoriteService {
             return false;
         }
 
-        // 这里可以根据实际业务需求定义有效的收藏类型
-        String[] validTypes = {"content", "user", "tag", "category"};
+        // 根据数据库表定义的收藏类型：CONTENT、GOODS
+        String[] validTypes = {"CONTENT", "GOODS"};
         for (String validType : validTypes) {
             if (validType.equals(favoriteType)) {
                 return true;

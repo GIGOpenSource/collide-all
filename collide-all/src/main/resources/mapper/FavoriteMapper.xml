@@ -8,7 +8,7 @@
     <sql id="baseColumns">
         id, favorite_type, target_id, user_id,
         target_title, target_cover, target_author_id,
-        user_nickname, status, cancel_reason, operator_id, create_time, update_time
+        user_nickname, status, create_time, update_time
     </sql>
 
     <!-- 根据用户、类型和目标查询收藏（使用 uk_user_target 唯一索引） -->
