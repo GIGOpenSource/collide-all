@@ -446,6 +446,51 @@ public class LikeServiceImpl implements LikeService {
         }
     }
 
+    @Override
+    public boolean checkLikeStatus(Long userId, String likeType, Long targetId) {
+        log.debug("检查点赞状态: userId={}, likeType={}, targetId={}", userId, likeType, targetId);
+        
+        // 参数验证
+        if (userId == null || !StringUtils.hasText(likeType) || targetId == null) {
+            log.warn("检查点赞状态参数不完整: userId={}, likeType={}, targetId={}", userId, likeType, targetId);
+            return false;
+        }
+        
+        try {
+            Boolean isLiked = likeMapper.checkLikeExists(userId, likeType, targetId);
+            boolean result = isLiked != null && isLiked;
+            log.debug("点赞状态检查结果: userId={}, likeType={}, targetId={}, isLiked={}", 
+                     userId, likeType, targetId, result);
+            return result;
+        } catch (Exception e) {
+            log.error("检查点赞状态时发生异常: userId={}, likeType={}, targetId={}", 
+                     userId, likeType, targetId, e);
+            return false;
+        }
+    }
+
+    @Override
+    public Like getLikeRecord(Long userId, String likeType, Long targetId) {
+        log.debug("获取点赞记录: userId={}, likeType={}, targetId={}", userId, likeType, targetId);
+        
+        // 参数验证
+        if (userId == null || !StringUtils.hasText(likeType) || targetId == null) {
+            log.warn("获取点赞记录参数不完整: userId={}, likeType={}, targetId={}", userId, likeType, targetId);
+            return null;
+        }
+        
+        try {
+            Like like = likeMapper.findByUserAndTarget(userId, likeType, targetId);
+            log.debug("点赞记录查询结果: userId={}, likeType={}, targetId={}, found={}", 
+                     userId, likeType, targetId, like != null);
+            return like;
+        } catch (Exception e) {
+            log.error("获取点赞记录时发生异常: userId={}, likeType={}, targetId={}", 
+                     userId, likeType, targetId, e);
+            return null;
+        }
+    }
+
     /**
      * 将Like实体转换为LikeResponse
      */
