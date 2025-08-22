@@ -75,7 +75,7 @@ public class FollowController {
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID和被关注者ID不能为空");
+                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
             }
             
             if (followerId.equals(followeeId)) {
@@ -128,7 +128,7 @@ public class FollowController {
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID和被关注者ID不能为空");
+                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
             }
             
             // 调用服务层
@@ -166,7 +166,7 @@ public class FollowController {
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID和被关注者ID不能为空");
+                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
             }
             
             // 调用服务层
@@ -480,9 +480,9 @@ public class FollowController {
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID和被关注者ID不能为空");
+                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
             }
-            
+
             // 调用服务层
             boolean success = followService.reactivateFollow(followerId, followeeId);
             return Result.success(success);
