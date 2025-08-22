@@ -53,10 +53,14 @@ public class FollowController {
     @PostMapping("/create")
     @Operation(summary = "关注用户", description = "创建关注关系")
     public Result<FollowResponse> followUser(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerId,
+            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
             @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "关注请求对象") @RequestBody(required = false) FollowCreateRequest request) {
+        
+        // 参数兼容性处理：支持下划线和驼峰两种格式
+        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
         
         // 优先使用请求体参数，如果没有则使用查询参数
         if (request != null) {
@@ -106,10 +110,14 @@ public class FollowController {
     @PostMapping("/unfollow")
     @Operation(summary = "取消关注", description = "取消关注关系")
     public Result<Void> unfollowUser(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerId,
+            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
             @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "取消关注请求对象") @RequestBody(required = false) FollowUnfollowRequest request) {
+        
+        // 参数兼容性处理：支持下划线和驼峰两种格式
+        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
         
         // 优先使用请求体参数，如果没有则使用查询参数
         if (request != null) {
@@ -151,9 +159,13 @@ public class FollowController {
     @GetMapping("/check")
     @Operation(summary = "检查关注状态", description = "查询用户是否已关注目标用户")
     public Result<Boolean> checkFollowStatus(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerId,
+            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
             @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId) {
+        
+        // 参数兼容性处理：支持下划线和驼峰两种格式
+        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
         
         // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
         if (followeeId == null && followedId != null) {
@@ -393,12 +405,16 @@ public class FollowController {
     @GetMapping("/search")
     @Operation(summary = "根据昵称搜索关注关系", description = "根据关注者或被关注者昵称进行模糊搜索")
     public Result<PageResponse<FollowResponse>> searchByNickname(
-            @Parameter(description = "关注者ID") @RequestParam(value = "follower_id", required = false) Long followerId,
+            @Parameter(description = "关注者ID") @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（驼峰格式）") @RequestParam(value = "followerId", required = false) Long followerIdCamel,
             @Parameter(description = "被关注者ID") @RequestParam(value = "followee_id", required = false) Long followeeId,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "昵称关键词", required = true) @RequestParam String nicknameKeyword,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        
+        // 参数兼容性处理：支持下划线和驼峰两种格式
+        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
         
         // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
         if (followeeId == null && followedId != null) {
@@ -465,9 +481,13 @@ public class FollowController {
     @PostMapping("/reactivate")
     @Operation(summary = "重新激活关注关系", description = "将cancelled状态的关注重新设置为active")
     public Result<Boolean> reactivateFollow(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id") Long followerId,
+            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
             @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId) {
+        
+        // 参数兼容性处理：支持下划线和驼峰两种格式
+        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
         
         // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
         if (followeeId == null && followedId != null) {
