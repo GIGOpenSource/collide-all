@@ -55,12 +55,19 @@ public class FollowController {
     public Result<FollowResponse> followUser(
             @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerId,
             @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "关注请求对象") @RequestBody(required = false) FollowCreateRequest request) {
         
         // 优先使用请求体参数，如果没有则使用查询参数
         if (request != null) {
             followerId = request.getFollowerId();
             followeeId = request.getFolloweeId(); // 注意：请求对象中字段名是followeeId，与数据库保持一致
+        }
+        
+        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
+        if (followeeId == null && followedId != null) {
+            followeeId = followedId;
+            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
         }
         
         try {
@@ -101,12 +108,19 @@ public class FollowController {
     public Result<Void> unfollowUser(
             @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerId,
             @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "取消关注请求对象") @RequestBody(required = false) FollowUnfollowRequest request) {
         
         // 优先使用请求体参数，如果没有则使用查询参数
         if (request != null) {
             followerId = request.getFollowerId();
             followeeId = request.getFolloweeId(); // 注意：请求对象中字段名是followeeId，与数据库保持一致
+        }
+        
+        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
+        if (followeeId == null && followedId != null) {
+            followeeId = followedId;
+            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
         }
         
         try {
@@ -137,8 +151,15 @@ public class FollowController {
     @GetMapping("/check")
     @Operation(summary = "检查关注状态", description = "查询用户是否已关注目标用户")
     public Result<Boolean> checkFollowStatus(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id") Long followerId,
-            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id") Long followeeId) {
+            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerId,
+            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId) {
+        
+        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
+        if (followeeId == null && followedId != null) {
+            followeeId = followedId;
+            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
+        }
         
         try {
             log.info("REST请求 - 检查关注状态: followerId={}, followeeId={}", followerId, followeeId);
