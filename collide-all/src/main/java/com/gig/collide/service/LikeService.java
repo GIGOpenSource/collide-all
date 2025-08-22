@@ -73,6 +73,17 @@ public interface LikeService {
     Like getLikeRecord(Long userId, String likeType, Long targetId);
 
     /**
+     * 批量检查点赞状态
+     * 查询用户对多个目标对象的点赞状态
+     *
+     * @param userId 用户ID
+     * @param likeType 点赞类型
+     * @param targetIds 目标对象ID列表
+     * @return Map<targetId, isLiked>
+     */
+    Map<Long, Boolean> batchCheckLikeStatus(Long userId, String likeType, List<Long> targetIds);
+
+    /**
      * 分页查询用户点赞记录
      * 对应Mapper方法：findUserLikes
      *

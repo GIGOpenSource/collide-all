@@ -1,5 +1,6 @@
 package com.gig.collide.service.Impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.Apientry.api.common.response.PageResponse;
@@ -23,6 +24,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 收藏业务逻辑实现类 - 简洁版
@@ -966,6 +969,51 @@ public class FavoriteServiceImpl implements FavoriteService {
         // 这里应该根据收藏类型检查目标对象是否存在
         // 暂时返回true，实际使用时需要实现
         return true;
+    }
+
+    @Override
+    public Map<Long, Boolean> batchCheckFavoriteStatus(Long userId, String favoriteType, List<Long> targetIds) {
+        log.debug("批量检查收藏状态: userId={}, favoriteType={}, targetIds.size={}", 
+                 userId, favoriteType, targetIds != null ? targetIds.size() : 0);
+        
+        Map<Long, Boolean> resultMap = new HashMap<>();
+        
+        // 参数验证
+        if (userId == null || !StringUtils.hasText(favoriteType) || targetIds == null || targetIds.isEmpty()) {
+            log.warn("批量检查收藏状态参数不完整: userId={}, favoriteType={}, targetIds={}", 
+                    userId, favoriteType, targetIds);
+            // 返回全false的map
+            if (targetIds != null) {
+                targetIds.forEach(id -> resultMap.put(id, false));
+            }
+            return resultMap;
+        }
+        
+        try {
+            // 查询用户对这些目标的所有收藏记录
+            LambdaQueryWrapper<Favorite> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Favorite::getUserId, userId)
+                       .eq(Favorite::getFavoriteType, favoriteType)
+                       .in(Favorite::getTargetId, targetIds)
+                       .eq(Favorite::getStatus, "active");
+            
+            List<Favorite> favorites = favoriteMapper.selectList(queryWrapper);
+            Set<Long> favoritedTargetIds = favorites.stream()
+                                                  .map(Favorite::getTargetId)
+                                                  .collect(Collectors.toSet());
+            
+            // 构建结果map
+            targetIds.forEach(id -> resultMap.put(id, favoritedTargetIds.contains(id)));
+            
+            log.debug("批量收藏状态查询结果: 总数={}, 已收藏数={}", targetIds.size(), favoritedTargetIds.size());
+            
+        } catch (Exception e) {
+            log.error("批量检查收藏状态失败: userId={}, favoriteType={}", userId, favoriteType, e);
+            // 出错时返回全false
+            targetIds.forEach(id -> resultMap.put(id, false));
+        }
+        
+        return resultMap;
     }
 
     /**

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -489,6 +490,51 @@ public class LikeServiceImpl implements LikeService {
                      userId, likeType, targetId, e);
             return null;
         }
+    }
+
+    @Override
+    public Map<Long, Boolean> batchCheckLikeStatus(Long userId, String likeType, List<Long> targetIds) {
+        log.debug("批量检查点赞状态: userId={}, likeType={}, targetIds.size={}", 
+                 userId, likeType, targetIds != null ? targetIds.size() : 0);
+        
+        Map<Long, Boolean> resultMap = new HashMap<>();
+        
+        // 参数验证
+        if (userId == null || !StringUtils.hasText(likeType) || targetIds == null || targetIds.isEmpty()) {
+            log.warn("批量检查点赞状态参数不完整: userId={}, likeType={}, targetIds={}", 
+                    userId, likeType, targetIds);
+            // 返回全false的map
+            if (targetIds != null) {
+                targetIds.forEach(id -> resultMap.put(id, false));
+            }
+            return resultMap;
+        }
+        
+        try {
+            // 查询用户对这些目标的所有点赞记录
+            LambdaQueryWrapper<Like> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Like::getUserId, userId)
+                       .eq(Like::getLikeType, likeType)
+                       .in(Like::getTargetId, targetIds)
+                       .eq(Like::getStatus, "active");
+            
+            List<Like> likes = likeMapper.selectList(queryWrapper);
+            Set<Long> likedTargetIds = likes.stream()
+                                           .map(Like::getTargetId)
+                                           .collect(Collectors.toSet());
+            
+            // 构建结果map
+            targetIds.forEach(id -> resultMap.put(id, likedTargetIds.contains(id)));
+            
+            log.debug("批量点赞状态查询结果: 总数={}, 已点赞数={}", targetIds.size(), likedTargetIds.size());
+            
+        } catch (Exception e) {
+            log.error("批量检查点赞状态失败: userId={}, likeType={}", userId, likeType, e);
+            // 出错时返回全false
+            targetIds.forEach(id -> resultMap.put(id, false));
+        }
+        
+        return resultMap;
     }
 
     /**

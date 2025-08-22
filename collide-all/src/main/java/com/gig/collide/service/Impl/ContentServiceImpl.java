@@ -447,7 +447,36 @@ public class ContentServiceImpl implements ContentService {
 
             // 使用MyBatis-Plus分页
             Page<Content> page = new Page<>(currentPage, pageSize);
+            
+            // 如果是LONGVIDEO查询，添加特殊调试
+            if ("LONGVIDEO".equals(contentType) && authorId != null) {
+                log.info("LONGVIDEO查询调试 - 开始执行查询: contentType={}, authorId={}", contentType, authorId);
+                
+                // 先查询该作者的所有内容类型，用于调试
+                LambdaQueryWrapper<Content> debugWrapper = new LambdaQueryWrapper<>();
+                debugWrapper.eq(Content::getAuthorId, authorId)
+                           .select(Content::getId, Content::getTitle, Content::getContentType, Content::getStatus);
+                List<Content> debugResults = contentMapper.selectList(debugWrapper);
+                
+                log.info("作者{}的所有内容数据: {}", authorId, 
+                        debugResults.stream().map(c -> 
+                            String.format("ID:%d,Title:%s,Type:%s,Status:%s", 
+                                        c.getId(), c.getTitle(), c.getContentType(), c.getStatus()))
+                                .collect(Collectors.toList()));
+                
+                // 统计各contentType的数量
+                Map<String, Long> typeCount = debugResults.stream()
+                    .collect(Collectors.groupingBy(Content::getContentType, Collectors.counting()));
+                log.info("作者{}的内容类型统计: {}", authorId, typeCount);
+            }
+            
             IPage<Content> result = contentMapper.selectPage(page, queryWrapper);
+            
+            // 查询结果调试
+            log.info("内容查询结果: 总数={}, 当前页数据={}", result.getTotal(), result.getRecords().size());
+            if ("LONGVIDEO".equals(contentType) && result.getTotal() == 0) {
+                log.warn("LONGVIDEO查询无结果 - 可能原因: 1.contentType值不匹配 2.status过滤 3.数据不存在");
+            }
 
             // 转换为Response对象
             List<Content> contents = result.getRecords();
@@ -469,15 +498,27 @@ public class ContentServiceImpl implements ContentService {
                 try {
                     // 批量点赞状态
                     likedMap = likeService.batchCheckLikeStatus(currentUserId, "CONTENT", contentIds);
-                } catch (Exception ignored) {}
+                    log.debug("批量点赞状态查询成功: userId={}, size={}", currentUserId, likedMap.size());
+                } catch (Exception e) {
+                    log.warn("批量点赞状态查询失败: userId={}, error={}", currentUserId, e.getMessage(), e);
+                    likedMap = java.util.Collections.emptyMap();
+                }
                 try {
                     // 批量收藏状态
                     favoritedMap = favoriteService.batchCheckFavoriteStatus(currentUserId, "CONTENT", contentIds);
-                } catch (Exception ignored) {}
+                    log.debug("批量收藏状态查询成功: userId={}, size={}", currentUserId, favoritedMap.size());
+                } catch (Exception e) {
+                    log.warn("批量收藏状态查询失败: userId={}, error={}", currentUserId, e.getMessage(), e);
+                    favoritedMap = java.util.Collections.emptyMap();
+                }
                 try {
                     // 批量关注状态（作者维度）
                     followedMap = followService.batchCheckFollowStatus(currentUserId, authorIdsInPage);
-                } catch (Exception ignored) {}
+                    log.debug("批量关注状态查询成功: userId={}, size={}", currentUserId, followedMap.size());
+                } catch (Exception e) {
+                    log.warn("批量关注状态查询失败: userId={}, error={}", currentUserId, e.getMessage(), e);
+                    followedMap = java.util.Collections.emptyMap();
+                }
             }
 
             // 供lambda安全引用的最终变量

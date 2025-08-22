@@ -51,6 +51,16 @@ public interface FollowService {
     boolean checkFollowStatus(Long followerId, Long followeeId);
 
     /**
+     * 批量检查关注状态
+     * 查询用户对多个目标用户的关注状态
+     *
+     * @param followerId 关注者ID
+     * @param followeeIds 被关注者ID列表
+     * @return Map<followeeId, isFollowed>
+     */
+    Map<Long, Boolean> batchCheckFollowStatus(Long followerId, List<Long> followeeIds);
+
+    /**
      * 获取关注关系详情
      *
      * @param followerId 关注者ID

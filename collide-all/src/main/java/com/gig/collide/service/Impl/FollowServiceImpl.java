@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -513,6 +514,105 @@ public class FollowServiceImpl implements FollowService {
         } catch (Exception e) {
             log.error("Controller层 - 关注关系列表查询失败", e);
             return Result.error("关注关系列表查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean checkFollowStatus(Long followerId, Long followeeId) {
+        log.debug("检查关注状态: followerId={}, followeeId={}", followerId, followeeId);
+        
+        // 参数验证
+        if (followerId == null || followeeId == null) {
+            log.warn("检查关注状态参数不完整: followerId={}, followeeId={}", followerId, followeeId);
+            return false;
+        }
+        
+        try {
+            LambdaQueryWrapper<Follow> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Follow::getFollowerId, followerId)
+                       .eq(Follow::getFolloweeId, followeeId)
+                       .eq(Follow::getStatus, "active");
+            
+            long count = followMapper.selectCount(queryWrapper);
+            boolean isFollowed = count > 0;
+            
+            log.debug("关注状态检查结果: followerId={}, followeeId={}, isFollowed={}", 
+                     followerId, followeeId, isFollowed);
+            return isFollowed;
+            
+        } catch (Exception e) {
+            log.error("检查关注状态时发生异常: followerId={}, followeeId={}", followerId, followeeId, e);
+            return false;
+        }
+    }
+
+    @Override
+    public Map<Long, Boolean> batchCheckFollowStatus(Long followerId, List<Long> followeeIds) {
+        log.debug("批量检查关注状态: followerId={}, followeeIds.size={}", 
+                 followerId, followeeIds != null ? followeeIds.size() : 0);
+        
+        Map<Long, Boolean> resultMap = new HashMap<>();
+        
+        // 参数验证
+        if (followerId == null || followeeIds == null || followeeIds.isEmpty()) {
+            log.warn("批量检查关注状态参数不完整: followerId={}, followeeIds={}", followerId, followeeIds);
+            // 返回全false的map
+            if (followeeIds != null) {
+                followeeIds.forEach(id -> resultMap.put(id, false));
+            }
+            return resultMap;
+        }
+        
+        try {
+            // 查询用户对这些目标用户的所有关注记录
+            LambdaQueryWrapper<Follow> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Follow::getFollowerId, followerId)
+                       .in(Follow::getFolloweeId, followeeIds)
+                       .eq(Follow::getStatus, "active");
+            
+            List<Follow> follows = followMapper.selectList(queryWrapper);
+            Set<Long> followedIds = follows.stream()
+                                          .map(Follow::getFolloweeId)
+                                          .collect(Collectors.toSet());
+            
+            // 构建结果map
+            followeeIds.forEach(id -> resultMap.put(id, followedIds.contains(id)));
+            
+            log.debug("批量关注状态查询结果: 总数={}, 已关注数={}", followeeIds.size(), followedIds.size());
+            
+        } catch (Exception e) {
+            log.error("批量检查关注状态失败: followerId={}", followerId, e);
+            // 出错时返回全false
+            followeeIds.forEach(id -> resultMap.put(id, false));
+        }
+        
+        return resultMap;
+    }
+
+    @Override
+    public Follow getFollowRelation(Long followerId, Long followeeId) {
+        log.debug("获取关注关系详情: followerId={}, followeeId={}", followerId, followeeId);
+        
+        // 参数验证
+        if (followerId == null || followeeId == null) {
+            log.warn("获取关注关系参数不完整: followerId={}, followeeId={}", followerId, followeeId);
+            return null;
+        }
+        
+        try {
+            LambdaQueryWrapper<Follow> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Follow::getFollowerId, followerId)
+                       .eq(Follow::getFolloweeId, followeeId)
+                       .orderByDesc(Follow::getCreateTime);
+            
+            Follow follow = followMapper.selectOne(queryWrapper);
+            log.debug("关注关系查询结果: followerId={}, followeeId={}, found={}", 
+                     followerId, followeeId, follow != null);
+            return follow;
+            
+        } catch (Exception e) {
+            log.error("获取关注关系时发生异常: followerId={}, followeeId={}", followerId, followeeId, e);
+            return null;
         }
     }
 
