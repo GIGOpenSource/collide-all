@@ -70,6 +70,13 @@ public interface ContentMapper extends BaseMapper<Content> {
                                         @Param("limit") Integer limit);
 
     /**
+     * 随机获取内容列表
+     * @param limit 返回数量限制
+     * @return 随机内容列表
+     */
+    List<Content> getRandomContents(@Param("limit") Integer limit);
+
+    /**
      * 相似内容（基于分类和标签的相似度推荐）
      */
     List<Content> getSimilarContents(@Param("contentId") Long contentId,

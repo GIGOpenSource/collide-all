@@ -448,4 +448,13 @@
         LIMIT #{limit}
     </select>
 
+    <!-- 随机获取内容列表 -->
+    <select id="getRandomContents" resultType="com.gig.collide.domain.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+        ORDER BY RAND()
+        LIMIT #{limit}
+    </select>
+
 </mapper>

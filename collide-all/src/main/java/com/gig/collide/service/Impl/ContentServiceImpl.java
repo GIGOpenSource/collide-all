@@ -220,6 +220,20 @@ public class ContentServiceImpl implements ContentService {
         return contentMapper.getRecommendedContents(userId, excludeContentIds, limit);
     }
 
+    @Override
+    public List<Content> getRandomContents(Integer limit) {
+        log.debug("获取随机内容: limit={}", limit);
+        
+        if (limit == null || limit <= 0) {
+            limit = 5; // 默认返回5个
+        }
+        if (limit > 50) {
+            limit = 50; // 最大限制50个
+        }
+        
+        return contentMapper.getRandomContents(limit);
+    }
+
     // =================== 状态管理功能（3个方法）===================
 
     @Override

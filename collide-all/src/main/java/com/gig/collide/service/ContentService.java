@@ -80,6 +80,11 @@ public interface ContentService {
      */
     List<Content> getRecommendedContents(Long userId, List<Long> excludeContentIds, Integer limit);
 
+    /**
+     * 随机获取内容列表
+     */
+    List<Content> getRandomContents(Integer limit);
+
     // =================== 状态管理功能（3个方法）===================
 
     /**

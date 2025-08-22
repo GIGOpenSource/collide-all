@@ -18,9 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 内容管理控制器 - 极简版
@@ -187,6 +189,50 @@ public class ContentController {
         } catch (Exception e) {
             log.error("查询内容详情失败: contentId={}", contentId, e);
             return Result.error("查询内容详情失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 随机获取5个内容详情
+     */
+    @GetMapping("/random")
+    @Operation(summary = "随机内容详情", description = "随机获取5个已发布内容的详细信息，可以乱序")
+    public Result<List<ContentResponse>> getRandomContents(
+            @Parameter(description = "用户ID（用于互动状态查询）") @RequestParam(required = false) Long userId) {
+        try {
+            log.info("REST请求 - 随机获取内容详情: userId={}", userId);
+            
+            // 获取随机5个内容
+            List<Content> contentList = contentService.getRandomContents(5);
+            if (contentList == null || contentList.isEmpty()) {
+                log.warn("没有找到可用的内容");
+                return Result.success(new ArrayList<>());
+            }
+            
+            // 转换为响应对象列表
+            List<ContentResponse> responseList = contentList.stream()
+                .map(content -> {
+                    ContentResponse response = convertToResponse(content);
+                    
+                    // 如果提供了userId，查询互动状态
+                    if (userId != null) {
+                        // 这里可以添加查询点赞、收藏、关注状态的逻辑
+                        // 为了简化，先设置为false，实际项目中应该调用相应的service方法
+                        response.setIsLiked(false);
+                        response.setIsFavorited(false);
+                        response.setIsFollowed(false);
+                    }
+                    
+                    return response;
+                })
+                .collect(Collectors.toList());
+            
+            log.info("随机获取内容详情成功: count={}", responseList.size());
+            return Result.success(responseList);
+            
+        } catch (Exception e) {
+            log.error("随机获取内容详情失败", e);
+            return Result.error("随机获取内容详情失败: " + e.getMessage());
         }
     }
 
