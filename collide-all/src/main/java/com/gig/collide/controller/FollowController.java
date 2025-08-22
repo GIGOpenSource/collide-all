@@ -395,9 +395,16 @@ public class FollowController {
     public Result<PageResponse<FollowResponse>> searchByNickname(
             @Parameter(description = "关注者ID") @RequestParam(value = "follower_id", required = false) Long followerId,
             @Parameter(description = "被关注者ID") @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "昵称关键词", required = true) @RequestParam String nicknameKeyword,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        
+        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
+        if (followeeId == null && followedId != null) {
+            followeeId = followedId;
+            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
+        }
         
         try {
             log.info("REST请求 - 昵称搜索: keyword={}, page={}/{}", nicknameKeyword, currentPage, pageSize);
@@ -459,7 +466,14 @@ public class FollowController {
     @Operation(summary = "重新激活关注关系", description = "将cancelled状态的关注重新设置为active")
     public Result<Boolean> reactivateFollow(
             @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id") Long followerId,
-            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id") Long followeeId) {
+            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId) {
+        
+        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
+        if (followeeId == null && followedId != null) {
+            followeeId = followedId;
+            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
+        }
         
         try {
             log.info("REST请求 - 重新激活关注: followerId={}, followeeId={}", followerId, followeeId);
