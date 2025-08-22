@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.UserWalletMapper">
+
+    <!-- 根据用户ID查询钱包信息 -->
+    <select id="selectByUserId" resultType="com.gig.collide.domain.UserWallet">
+        SELECT 
+            id,
+            user_id,
+            balance,
+            frozen_amount,
+            coin_balance,
+            coin_total_earned,
+            coin_total_spent,
+            total_income,
+            total_expense,
+            status,
+            create_time,
+            update_time
+        FROM t_user_wallet
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 增加用户金币余额 -->
+    <update id="addCoinBalance">
+        UPDATE t_user_wallet 
+        SET coin_balance = coin_balance + #{amount},
+            coin_total_earned = coin_total_earned + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 创建用户钱包（如果不存在） -->
+    <insert id="createWalletIfNotExists">
+        INSERT INTO t_user_wallet (user_id, balance, frozen_amount, coin_balance, coin_total_earned, coin_total_spent, total_income, total_expense, status, create_time, update_time)
+        SELECT #{userId}, 0.00, 0.00, 0, 0, 0, 0.00, 0.00, 'active', NOW(), NOW()
+        WHERE NOT EXISTS (
+            SELECT 1 FROM t_user_wallet WHERE user_id = #{userId}
+        )
+    </insert>
+
+</mapper>

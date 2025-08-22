@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.TaskRewardMapper">
+
+    <!-- 通用的resultMap -->
+    <resultMap id="TaskRewardWithTemplate" type="com.gig.collide.domain.TaskReward">
+        <id column="id" property="id"/>
+        <result column="task_id" property="taskId"/>
+        <result column="reward_type" property="rewardType"/>
+        <result column="reward_name" property="rewardName"/>
+        <result column="reward_desc" property="rewardDesc"/>
+        <result column="reward_amount" property="rewardAmount"/>
+        <result column="reward_data" property="rewardData"/>
+
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <!-- 任务模板扩展字段 -->
+        <result column="task_name" property="taskName"/>
+        <result column="task_desc" property="taskDesc"/>
+        <result column="task_type" property="taskType"/>
+    </resultMap>
+
+    <!-- 根据任务模板ID查询奖励配置 -->
+    <select id="selectRewardsByTaskTemplateId" resultMap="TaskRewardWithTemplate">
+        SELECT 
+            tr.id,
+            tr.task_id,
+            tr.reward_type,
+            tr.reward_name,
+            tr.reward_desc,
+            tr.reward_amount,
+            tr.reward_data,
+
+            tr.create_time,
+            tr.update_time,
+            tt.task_name,
+            tt.task_desc,
+            tt.task_type
+        FROM t_task_reward tr
+        LEFT JOIN t_task_template tt ON tr.task_id = tt.id
+        WHERE tr.task_id = #{taskTemplateId}
+        ORDER BY tr.id ASC
+    </select>
+
+    <!-- 根据任务模板ID查询启用的奖励配置 -->
+    <select id="selectActiveRewardsByTaskTemplateId" resultMap="TaskRewardWithTemplate">
+        SELECT 
+            tr.id,
+            tr.task_id,
+            tr.reward_type,
+            tr.reward_name,
+            tr.reward_desc,
+            tr.reward_amount,
+            tr.reward_data,
+
+            tr.create_time,
+            tr.update_time,
+            tt.task_name,
+            tt.task_desc,
+            tt.task_type
+        FROM t_task_reward tr
+        LEFT JOIN t_task_template tt ON tr.task_id = tt.id
+        WHERE tr.task_id = #{taskTemplateId}
+        ORDER BY tr.id ASC
+    </select>
+
+</mapper>

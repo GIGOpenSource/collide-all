@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.mapper.UserTaskMapper">
+
+    <!-- 通用的resultMap，包含任务模板信息 -->
+    <resultMap id="UserTaskRecordWithTemplate" type="com.gig.collide.domain.UserTaskRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="task_id" property="taskId"/>
+        <result column="task_name" property="taskName"/>
+        <result column="task_type" property="taskType"/>
+        <result column="task_category" property="taskCategory"/>
+        <result column="target_count" property="targetCount"/>
+        <result column="current_count" property="currentCount"/>
+        <result column="is_completed" property="isCompleted"/>
+        <result column="is_rewarded" property="isRewarded"/>
+        <result column="task_date" property="taskDate"/>
+        <result column="complete_time" property="completeTime"/>
+        <result column="reward_time" property="rewardTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <!-- 任务模板扩展字段 -->
+        <result column="template_task_name" property="taskName"/>
+        <result column="template_task_desc" property="taskDesc"/>
+    </resultMap>
+
+    <!-- 获取用户指定日期的任务记录 -->
+    <select id="selectUserTasksByDate" resultMap="UserTaskRecordWithTemplate">
+        SELECT 
+            utr.id,
+            utr.user_id,
+            utr.task_id,
+            utr.task_name,
+            utr.task_type,
+            utr.task_category,
+            utr.target_count,
+            utr.current_count,
+            utr.is_completed,
+            utr.is_rewarded,
+            utr.task_date,
+            utr.complete_time,
+            utr.reward_time,
+            utr.create_time,
+            utr.update_time,
+            tt.task_name as template_task_name,
+            tt.task_desc as template_task_desc
+        FROM t_user_task_record utr
+        LEFT JOIN t_task_template tt ON utr.task_id = tt.id
+        WHERE utr.user_id = #{userId}
+          AND utr.task_date = #{taskDate}
+        ORDER BY tt.sort_order ASC, utr.id ASC
+    </select>
+
+    <!-- 获取用户任务记录列表 -->
+    <select id="selectUserTasks" resultMap="UserTaskRecordWithTemplate">
+        SELECT 
+            utr.id,
+            utr.user_id,
+            utr.task_id,
+            utr.task_name,
+            utr.task_type,
+            utr.task_category,
+            utr.target_count,
+            utr.current_count,
+            utr.is_completed,
+            utr.is_rewarded,
+            utr.task_date,
+            utr.complete_time,
+            utr.reward_time,
+            utr.create_time,
+            utr.update_time,
+            tt.task_name as template_task_name,
+            tt.task_desc as template_task_desc
+        FROM t_user_task_record utr
+        LEFT JOIN t_task_template tt ON utr.task_id = tt.id
+        WHERE utr.user_id = #{userId}
+        <if test="taskType != null and taskType != ''">
+            AND utr.task_type = #{taskType}
+        </if>
+        ORDER BY utr.task_date DESC, tt.sort_order ASC, utr.id ASC
+        LIMIT 100
+    </select>
+
+    <!-- 根据用户ID和任务动作查询进行中的任务 -->
+    <select id="selectTasksByUserIdAndAction" resultMap="UserTaskRecordWithTemplate">
+        SELECT 
+            utr.id,
+            utr.user_id,
+            utr.task_id,
+            utr.task_name,
+            utr.task_type,
+            utr.task_category,
+            utr.target_count,
+            utr.current_count,
+            utr.is_completed,
+            utr.is_rewarded,
+            utr.task_date,
+            utr.complete_time,
+            utr.reward_time,
+            utr.create_time,
+            utr.update_time,
+            tt.task_name as template_task_name,
+            tt.task_desc as template_task_desc
+        FROM t_user_task_record utr
+        LEFT JOIN t_task_template tt ON utr.task_id = tt.id
+        WHERE utr.user_id = #{userId}
+          AND utr.task_category = #{taskAction}
+          AND utr.is_completed = 0
+        ORDER BY utr.id ASC
+    </select>
+
+    <!-- 获取用户已完成但未领取奖励的任务 -->
+    <select id="selectCompletedTasks" resultMap="UserTaskRecordWithTemplate">
+        SELECT 
+            utr.id,
+            utr.user_id,
+            utr.task_id,
+            utr.task_name,
+            utr.task_type,
+            utr.task_category,
+            utr.target_count,
+            utr.current_count,
+            utr.is_completed,
+            utr.is_rewarded,
+            utr.task_date,
+            utr.complete_time,
+            utr.reward_time,
+            utr.create_time,
+            utr.update_time,
+            tt.task_name as template_task_name,
+            tt.task_desc as template_task_desc
+        FROM t_user_task_record utr
+        LEFT JOIN t_task_template tt ON utr.task_id = tt.id
+        WHERE utr.user_id = #{userId}
+          AND utr.is_completed = 1
+          AND utr.is_rewarded = 0
+        ORDER BY utr.complete_time DESC
+        LIMIT 50
+    </select>
+
+    <!-- 获取用户任务统计信息 -->
+    <select id="selectTaskStatistics" resultType="map">
+        SELECT 
+            COUNT(*) AS totalTasks,
+            SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) AS completedTasks,
+            SUM(CASE WHEN is_completed = 0 THEN 1 ELSE 0 END) AS inProgressTasks,
+            SUM(CASE WHEN task_type = 'daily' AND task_date = CURDATE() THEN 1 ELSE 0 END) AS todayTasks,
+            SUM(CASE WHEN task_type = 'daily' AND task_date = CURDATE() AND is_completed = 1 THEN 1 ELSE 0 END) AS todayCompletedTasks,
+            SUM(CASE WHEN is_completed = 1 AND is_rewarded = 0 THEN 1 ELSE 0 END) AS unclaimedRewards
+        FROM t_user_task_record 
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 更新任务进度 -->
+    <update id="updateTaskProgress">
+        UPDATE t_user_task_record 
+        SET current_count = #{currentCount},
+            is_completed = #{isCompleted},
+            <if test="isCompleted == '1'">
+                complete_time = NOW(),
+            </if>
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新任务进度 -->
+    <update id="batchUpdateTaskProgress">
+        <foreach collection="taskRecords" item="record" separator=";">
+            UPDATE t_user_task_record 
+            SET current_count = #{record.currentCount},
+                is_completed = #{record.isCompleted},
+                <if test="record.isCompleted == true">
+                    complete_time = NOW(),
+                </if>
+                update_time = NOW()
+            WHERE id = #{record.id}
+        </foreach>
+    </update>
+
+    <!-- 获取用户今日需要初始化的任务模板 -->
+    <select id="selectDailyTasksToInit" resultType="com.gig.collide.domain.TaskTemplate">
+        SELECT DISTINCT
+            tt.id,
+            tt.task_name,
+            tt.task_desc,
+            tt.task_type,
+            tt.task_category,
+            tt.task_action,
+            tt.target_count,
+            tt.sort_order,
+            tt.is_active,
+            tt.start_date,
+            tt.end_date,
+            tt.create_time,
+            tt.update_time
+        FROM t_task_template tt
+        WHERE tt.task_type = 'daily'
+          AND tt.is_active = 1
+          AND (tt.start_date IS NULL OR tt.start_date &lt;= #{taskDate})
+          AND (tt.end_date IS NULL OR tt.end_date &gt;= #{taskDate})
+          AND NOT EXISTS (
+              SELECT 1 FROM t_user_task_record utr 
+              WHERE utr.user_id = #{userId} 
+                AND utr.task_id = tt.id 
+                AND utr.task_date = #{taskDate}
+          )
+        ORDER BY tt.sort_order ASC
+    </select>
+
+    <!-- 批量插入用户任务记录 -->
+    <insert id="batchInsertUserTasks" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_user_task_record (
+            user_id, task_id, task_name, task_type, task_category, 
+            target_count, current_count, is_completed, is_rewarded, task_date, 
+            create_time, update_time
+        ) VALUES
+        <foreach collection="taskRecords" item="record" separator=",">
+            (
+                #{record.userId}, #{record.taskId}, #{record.taskName},
+                #{record.taskType}, #{record.taskCategory}, 
+                #{record.targetCount}, #{record.currentCount}, #{record.isCompleted}, 
+                #{record.isRewarded}, #{record.taskDate}, 
+                NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 重置过期的每日任务 -->
+    <update id="resetExpiredDailyTasks">
+        UPDATE t_user_task_record 
+        SET is_completed = 0,
+            update_time = NOW()
+        WHERE task_type = 'daily'
+          AND task_date = #{yesterday}
+          AND is_completed = 0
+    </update>
+
+    <!-- 检查用户是否已有指定日期的任务记录 -->
+    <select id="countUserTaskByTemplateAndDate" resultType="int">
+        SELECT COUNT(*)
+        FROM t_user_task_record 
+        WHERE user_id = #{userId}
+          AND task_id = #{taskTemplateId}
+          AND task_date = #{taskDate}
+    </select>
+
+</mapper>

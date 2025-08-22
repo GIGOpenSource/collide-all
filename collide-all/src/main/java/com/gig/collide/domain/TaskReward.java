@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.*;
 import lombok.experimental.Accessors;
 
-import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
 
 /**
@@ -33,8 +33,8 @@ public class TaskReward {
     /**
      * 任务模板ID
      */
-    @TableField("task_template_id")
-    private Long taskTemplateId;
+    @TableField("task_id")
+    private Long taskId;
 
     /**
      * 奖励类型：coin、cash、experience、item
@@ -46,7 +46,7 @@ public class TaskReward {
      * 奖励数量
      */
     @TableField("reward_amount")
-    private BigDecimal rewardAmount;
+    private Integer rewardAmount;
 
     /**
      * 奖励描述
@@ -55,16 +55,10 @@ public class TaskReward {
     private String rewardDesc;
 
     /**
-     * 是否启用
+     * 奖励扩展数据
      */
-    @TableField("is_active")
-    private Boolean isActive;
-
-    /**
-     * 排序值
-     */
-    @TableField("sort_order")
-    private Integer sortOrder;
+    @TableField("reward_data")
+    private String rewardData;
 
     /**
      * 创建时间
@@ -95,20 +89,6 @@ public class TaskReward {
     // =================== 业务方法 ===================
 
     /**
-     * 判断是否为启用状态
-     */
-    public boolean isActive() {
-        return Boolean.TRUE.equals(this.isActive);
-    }
-
-    /**
-     * 判断是否为禁用状态
-     */
-    public boolean isInactive() {
-        return Boolean.FALSE.equals(this.isActive);
-    }
-
-    /**
      * 判断是否为金币奖励
      */
     public boolean isCoinReward() {
@@ -137,41 +117,10 @@ public class TaskReward {
     }
 
     /**
-     * 启用奖励
-     */
-    public TaskReward enable() {
-        this.isActive = true;
-        return this;
-    }
-
-    /**
-     * 禁用奖励
-     */
-    public TaskReward disable() {
-        this.isActive = false;
-        return this;
-    }
-
-    /**
-     * 设置排序值
-     */
-    public TaskReward setSortOrder(Integer sortOrder) {
-        this.sortOrder = sortOrder != null ? sortOrder : 0;
-        return this;
-    }
-
-    /**
-     * 获取排序值（默认0）
-     */
-    public Integer getSortOrder() {
-        return this.sortOrder != null ? this.sortOrder : 0;
-    }
-
-    /**
      * 获取奖励数量（默认0）
      */
-    public BigDecimal getRewardAmount() {
-        return this.rewardAmount != null ? this.rewardAmount : BigDecimal.ZERO;
+    public Integer getRewardAmount() {
+        return this.rewardAmount != null ? this.rewardAmount : 0;
     }
 
     /**
@@ -203,14 +152,12 @@ public class TaskReward {
     /**
      * 创建任务奖励
      */
-    public static TaskReward create(Long taskTemplateId, String rewardType, 
-                                  BigDecimal rewardAmount, String rewardDesc) {
+    public static TaskReward create(Long taskId, String rewardType, 
+                                  Integer rewardAmount, String rewardDesc) {
         return new TaskReward()
-            .setTaskTemplateId(taskTemplateId)
+            .setTaskId(taskId)
             .setRewardType(rewardType)
             .setRewardAmount(rewardAmount)
-            .setRewardDesc(rewardDesc)
-            .setSortOrder(0)
-            .setIsActive(true);
+            .setRewardDesc(rewardDesc);
     }
 }

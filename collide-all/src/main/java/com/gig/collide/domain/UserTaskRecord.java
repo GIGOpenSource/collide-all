@@ -40,8 +40,8 @@ public class UserTaskRecord {
     /**
      * 任务模板ID
      */
-    @TableField("task_template_id")
-    private Long taskTemplateId;
+    @TableField("task_id")
+    private Long taskId;
 
     /**
      * 任务类型：daily、weekly、achievement
@@ -74,10 +74,16 @@ public class UserTaskRecord {
     private Integer currentCount;
 
     /**
-     * 任务状态：in_progress、completed、failed
+     * 是否已完成
      */
-    @TableField("status")
-    private String status;
+    @TableField("is_completed")
+    private Boolean isCompleted;
+
+    /**
+     * 是否已领取奖励
+     */
+    @TableField("is_rewarded")
+    private Boolean isRewarded;
 
     /**
      * 任务日期（用于每日/每周任务）
@@ -88,9 +94,16 @@ public class UserTaskRecord {
     /**
      * 完成时间
      */
-    @TableField("completed_time")
+    @TableField("complete_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime completedTime;
+    private LocalDateTime completeTime;
+
+    /**
+     * 奖励领取时间
+     */
+    @TableField("reward_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime rewardTime;
 
     /**
      * 创建时间
@@ -132,21 +145,21 @@ public class UserTaskRecord {
      * 判断任务是否进行中
      */
     public boolean isInProgress() {
-        return "in_progress".equals(this.status);
+        return !Boolean.TRUE.equals(this.isCompleted);
     }
 
     /**
      * 判断任务是否已完成
      */
     public boolean isCompleted() {
-        return "completed".equals(this.status);
+        return Boolean.TRUE.equals(this.isCompleted);
     }
 
     /**
-     * 判断任务是否失败
+     * 判断奖励是否已领取
      */
-    public boolean isFailed() {
-        return "failed".equals(this.status);
+    public boolean isRewarded() {
+        return Boolean.TRUE.equals(this.isRewarded);
     }
 
     /**
@@ -191,17 +204,9 @@ public class UserTaskRecord {
      */
     public UserTaskRecord complete() {
         if (canComplete()) {
-            this.status = "completed";
-            this.completedTime = LocalDateTime.now();
+            this.isCompleted = true;
+            this.completeTime = LocalDateTime.now();
         }
-        return this;
-    }
-
-    /**
-     * 标记任务失败
-     */
-    public UserTaskRecord markAsFailed() {
-        this.status = "failed";
         return this;
     }
 
@@ -210,8 +215,10 @@ public class UserTaskRecord {
      */
     public UserTaskRecord reset() {
         this.currentCount = 0;
-        this.status = "in_progress";
-        this.completedTime = null;
+        this.isCompleted = false;
+        this.isRewarded = false;
+        this.completeTime = null;
+        this.rewardTime = null;
         return this;
     }
 
@@ -227,17 +234,18 @@ public class UserTaskRecord {
     /**
      * 创建用户任务记录
      */
-    public static UserTaskRecord create(Long userId, Long taskTemplateId, String taskType, 
+    public static UserTaskRecord create(Long userId, Long taskId, String taskType, 
                                       String taskCategory, String taskAction, Integer targetCount, LocalDate taskDate) {
         return new UserTaskRecord()
             .setUserId(userId)
-            .setTaskTemplateId(taskTemplateId)
+            .setTaskId(taskId)
             .setTaskType(taskType)
             .setTaskCategory(taskCategory)
             .setTaskAction(taskAction)
             .setTargetCount(targetCount)
             .setCurrentCount(0)
-            .setStatus("in_progress")
+            .setIsCompleted(false)
+            .setIsRewarded(false)
             .setTaskDate(taskDate);
     }
 }
