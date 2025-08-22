@@ -8,6 +8,8 @@ import com.gig.collide.domain.Follow;
 import com.gig.collide.service.LikeService;
 import com.gig.collide.service.FavoriteService;
 import com.gig.collide.service.FollowService;
+import com.gig.collide.mapper.UserMapper;
+import com.gig.collide.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 用户互动管理控制器
@@ -40,6 +44,7 @@ public class UserInteractionController {
     private final LikeService likeService;
     private final FavoriteService favoriteService;
     private final FollowService followService;
+    private final UserMapper userMapper;
 
     /**
      * 获取用户所有互动信息
@@ -56,6 +61,8 @@ public class UserInteractionController {
      *         "favoriteType": "CONTENT|GOODS",           // type=FAVORITE时
      *         "targetId": 456,
      *         "targetTitle": "标题",
+     *         "targetAuthorId": 789,
+     *         "targetAuthorNickname": "作者昵称",        // 新增：作者昵称
      *         "createTime": "2024-08-22T15:30:00",
      *         "status": "active",
      *         // ...其他字段根据type不同而不同
@@ -144,6 +151,35 @@ public class UserInteractionController {
             } catch (Exception e) {
                 log.warn("获取用户关注数据失败: userId={}", userId, e);
             }
+            
+            // 批量查询作者昵称信息
+            Set<Long> authorIds = allInteractions.stream()
+                    .map(interaction -> (Long) interaction.get("targetAuthorId"))
+                    .filter(authorId -> authorId != null)
+                    .collect(Collectors.toSet());
+            
+            Map<Long, String> authorNicknameMap = new HashMap<>();
+            if (!authorIds.isEmpty()) {
+                try {
+                    log.debug("批量查询作者昵称: authorIds.size={}", authorIds.size());
+                    List<User> authors = userMapper.selectBatchIds(authorIds);
+                    authorNicknameMap = authors.stream()
+                            .collect(Collectors.toMap(User::getId, User::getNickname, (existing, replacement) -> existing));
+                    log.debug("作者昵称查询完成: 找到{}个作者信息", authorNicknameMap.size());
+                } catch (Exception e) {
+                    log.warn("批量查询作者昵称失败", e);
+                }
+            }
+            
+            // 填充作者昵称信息
+            final Map<Long, String> finalAuthorNicknameMap = authorNicknameMap;
+            allInteractions.forEach(interaction -> {
+                Long authorId = (Long) interaction.get("targetAuthorId");
+                if (authorId != null) {
+                    String authorNickname = finalAuthorNicknameMap.get(authorId);
+                    interaction.put("targetAuthorNickname", authorNickname);
+                }
+            });
             
             // 按创建时间倒序排序（最新的在前）
             allInteractions.sort((a, b) -> {
