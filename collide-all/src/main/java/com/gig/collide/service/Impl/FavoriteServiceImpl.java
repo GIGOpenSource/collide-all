@@ -299,24 +299,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         return favoriteMapper.getUserFavoriteStatistics(userId);
     }
 
-    @Override
-    public Map<Long, Boolean> batchCheckFavoriteStatus(Long userId, String favoriteType, List<Long> targetIds) {
-        log.debug("批量检查收藏状态: userId={}, favoriteType={}, targetIds.size={}",
-                userId, favoriteType, targetIds != null ? targetIds.size() : 0);
 
-        Map<Long, Boolean> result = new HashMap<>();
-
-        if (userId == null || !StringUtils.hasText(favoriteType) || targetIds == null || targetIds.isEmpty()) {
-            return result;
-        }
-
-        for (Long targetId : targetIds) {
-            boolean isFavorited = checkFavoriteStatus(userId, favoriteType, targetId);
-            result.put(targetId, isFavorited);
-        }
-
-        return result;
-    }
 
     @Override
     public IPage<Favorite> searchFavoritesByTitle(Long userId, String titleKeyword, String favoriteType,
