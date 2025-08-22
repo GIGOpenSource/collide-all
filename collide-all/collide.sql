@@ -11,7 +11,7 @@
  Target Server Version : 80043 (8.0.43)
  File Encoding         : 65001
 
- Date: 20/08/2025 10:57:28
+ Date: 22/08/2025 14:38:27
 */
 
 SET NAMES utf8mb4;
@@ -39,7 +39,7 @@ CREATE TABLE `t_ad`  (
   INDEX `idx_ad_type`(`ad_type` ASC) USING BTREE,
   INDEX `idx_is_active`(`is_active` ASC) USING BTREE,
   INDEX `idx_sort_order`(`sort_order` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '广告表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 495 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '广告表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for t_admin
@@ -143,7 +143,7 @@ CREATE TABLE `t_blogger_application`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_application`(`user_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'Blogger申请表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'Blogger申请表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for t_category
@@ -155,7 +155,7 @@ CREATE TABLE `t_category`  (
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '分类描述',
   `parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父分类ID，0表示顶级分类',
   `icon_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '分类图标URL',
-  `sort` int NOT NULL DEFAULT 0 COMMENT '排序值',
+  `sort` int NULL DEFAULT 0 COMMENT '排序值',
   `content_count` bigint NOT NULL DEFAULT 0 COMMENT '内容数量（冗余统计）',
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'active' COMMENT '状态：active、inactive',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -174,7 +174,7 @@ CREATE TABLE `t_category`  (
 DROP TABLE IF EXISTS `t_comment`;
 CREATE TABLE `t_comment`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论ID',
-  `comment_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '评论类型：CONTENT、DYNAMIC',
+  `comment_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '评论类型：COMMUNITY, VIDEO（社区、视频)',
   `target_id` bigint NOT NULL COMMENT '目标对象ID',
   `parent_comment_id` bigint NOT NULL DEFAULT 0 COMMENT '父评论ID，0表示根评论',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '评论内容',
@@ -194,7 +194,7 @@ CREATE TABLE `t_comment`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_parent_comment_id`(`parent_comment_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '评论主表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 128 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '评论主表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_content
@@ -204,7 +204,7 @@ CREATE TABLE `t_content`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '内容ID',
   `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '内容标题',
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '内容描述',
-  `content_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '内容类型：NOVEL、COMIC、VIDEO、ARTICLE、AUDIO',
+  `content_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '内容类型：NOVEL、COMIC、SHOTVIDEO、ARTICLE、AUDIO、LONGVIDEO',
   `content_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '内容数据，JSON格式',
   `cover_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '封面图片URL',
   `tags` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '标签，JSON数组格式',
@@ -219,6 +219,7 @@ CREATE TABLE `t_content`  (
   `like_count` bigint NOT NULL DEFAULT 0 COMMENT '点赞数',
   `comment_count` bigint NOT NULL DEFAULT 0 COMMENT '评论数',
   `favorite_count` bigint NOT NULL DEFAULT 0 COMMENT '收藏数',
+  `share_count` bigint NOT NULL DEFAULT 0 COMMENT '分享数',
   `score_count` bigint NOT NULL DEFAULT 0 COMMENT '评分数',
   `score_total` bigint NOT NULL DEFAULT 0 COMMENT '总评分',
   `publish_time` datetime NULL DEFAULT NULL COMMENT '发布时间',
@@ -230,7 +231,7 @@ CREATE TABLE `t_content`  (
   INDEX `idx_content_type`(`content_type` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_publish_time`(`publish_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 35 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容主表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 114 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容主表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_content_chapter
@@ -280,7 +281,7 @@ CREATE TABLE `t_content_payment`  (
   INDEX `idx_payment_type`(`payment_type` ASC) USING BTREE,
   INDEX `idx_coin_price`(`coin_price` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容付费配置表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容付费配置表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_content_tag
@@ -295,7 +296,7 @@ CREATE TABLE `t_content_tag`  (
   UNIQUE INDEX `uk_content_tag`(`content_id` ASC, `tag_id` ASC) USING BTREE,
   INDEX `idx_content_id`(`content_id` ASC) USING BTREE,
   INDEX `idx_tag_id`(`tag_id` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容标签关联表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容标签关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_favorite
@@ -319,7 +320,7 @@ CREATE TABLE `t_favorite`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_favorite_type`(`favorite_type` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '收藏主表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '收藏主表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_follow
@@ -341,7 +342,7 @@ CREATE TABLE `t_follow`  (
   INDEX `idx_follower_id`(`follower_id` ASC) USING BTREE,
   INDEX `idx_followee_id`(`followee_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '关注关系表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '关注关系表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_goods
@@ -404,7 +405,7 @@ CREATE TABLE `t_hot_search`  (
   INDEX `idx_search_count`(`search_count` ASC) USING BTREE,
   INDEX `idx_trend_score`(`trend_score` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '热门搜索表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '热门搜索表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_inform
@@ -429,7 +430,7 @@ CREATE TABLE `t_inform`  (
   INDEX `idx_is_deleted`(`is_deleted` ASC) USING BTREE,
   INDEX `idx_is_sent`(`is_sent` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容通知表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 110 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '内容通知表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_like
@@ -453,7 +454,7 @@ CREATE TABLE `t_like`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_like_type`(`like_type` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '点赞主表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 121 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '点赞主表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_message
@@ -497,7 +498,7 @@ CREATE TABLE `t_message_session`  (
   UNIQUE INDEX `uk_user_other`(`user_id` ASC, `other_user_id` ASC) USING BTREE,
   INDEX `idx_user_time`(`user_id` ASC, `last_message_time` ASC) USING BTREE,
   INDEX `idx_last_message`(`last_message_id` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户会话统计表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户会话统计表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_message_setting
@@ -513,7 +514,7 @@ CREATE TABLE `t_message_setting`  (
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_id`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户消息设置表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户消息设置表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_order
@@ -616,7 +617,7 @@ CREATE TABLE `t_search_history`  (
   INDEX `idx_keyword`(`keyword` ASC) USING BTREE,
   INDEX `idx_search_type`(`search_type` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '搜索历史表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '搜索历史表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_social_dynamic
@@ -625,9 +626,12 @@ DROP TABLE IF EXISTS `t_social_dynamic`;
 CREATE TABLE `t_social_dynamic`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '动态ID',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '动态内容',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发布标题',
   `dynamic_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'text' COMMENT '动态类型：text、image、video、share',
   `images` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '图片列表，JSON格式',
   `video_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '视频URL',
+  `is_free` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否免费：0-付费，1-免费',
+  `price` decimal(10, 2) NULL DEFAULT NULL COMMENT '价格（付费时必填）',
   `user_id` bigint NOT NULL COMMENT '发布用户ID',
   `user_nickname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户昵称（冗余）',
   `user_avatar` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户头像（冗余）',
@@ -645,7 +649,7 @@ CREATE TABLE `t_social_dynamic`  (
   INDEX `idx_dynamic_type`(`dynamic_type` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '社交动态主表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '社交动态主表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_tag
@@ -734,7 +738,6 @@ CREATE TABLE `t_user`  (
   `content_count` bigint NOT NULL DEFAULT 0 COMMENT '内容数',
   `like_count` bigint NOT NULL DEFAULT 0 COMMENT '获得点赞数',
   `vip_expire_time` datetime NULL DEFAULT NULL COMMENT 'VIP过期时间',
-  `is_vip` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'N' COMMENT '是否是VIP用户：Y-是，N-否',
   `last_login_time` datetime NULL DEFAULT NULL COMMENT '最后登录时间',
   `login_count` bigint NOT NULL DEFAULT 0 COMMENT '登录次数',
   `invite_code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '邀请码',
@@ -742,6 +745,7 @@ CREATE TABLE `t_user`  (
   `invited_count` bigint NOT NULL DEFAULT 0 COMMENT '邀请人数',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_vip` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'N' COMMENT '是否是VIP用户：Y-是，N-否',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE,
   UNIQUE INDEX `uk_email`(`email` ASC) USING BTREE,
@@ -749,7 +753,7 @@ CREATE TABLE `t_user`  (
   UNIQUE INDEX `uk_invite_code`(`invite_code` ASC) USING BTREE,
   INDEX `idx_role`(`role` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户统一信息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 107 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户统一信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for t_user_block
@@ -771,7 +775,7 @@ CREATE TABLE `t_user_block`  (
   INDEX `idx_blocked_user_id`(`blocked_user_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户拉黑关系表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户拉黑关系表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for t_user_content_purchase
@@ -802,7 +806,7 @@ CREATE TABLE `t_user_content_purchase`  (
   INDEX `idx_order_no`(`order_no` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_purchase_time`(`purchase_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户内容购买记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户内容购买记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_user_interest_tag
@@ -845,7 +849,7 @@ CREATE TABLE `t_user_reward_record`  (
   INDEX `idx_reward_type`(`reward_type` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户奖励记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户奖励记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_user_role
@@ -860,7 +864,7 @@ CREATE TABLE `t_user_role`  (
   UNIQUE INDEX `uk_user_role`(`user_id` ASC, `role_id` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_role_id`(`role_id` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户角色关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户角色关联表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for t_user_task_record
@@ -888,7 +892,7 @@ CREATE TABLE `t_user_task_record`  (
   INDEX `idx_task_id`(`task_id` ASC) USING BTREE,
   INDEX `idx_completed`(`is_completed` ASC) USING BTREE,
   INDEX `idx_rewarded`(`is_rewarded` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户任务记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户任务记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for t_user_wallet
