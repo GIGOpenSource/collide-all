@@ -9,6 +9,9 @@ import com.gig.collide.Apientry.api.content.request.ContentUpdateRequest;
 import com.gig.collide.Apientry.api.content.response.ContentResponse;
 import com.gig.collide.domain.Content;
 import com.gig.collide.service.ContentService;
+import com.gig.collide.service.LikeService;
+import com.gig.collide.service.FavoriteService;
+import com.gig.collide.service.FollowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,6 +44,9 @@ import java.util.stream.Collectors;
 public class ContentController {
 
     private final ContentService contentService;
+    private final LikeService likeService;
+    private final FavoriteService favoriteService;
+    private final FollowService followService;
 
     /**
      * 创建内容（支持付费配置）
@@ -175,12 +181,28 @@ public class ContentController {
             
             // 如果提供了userId，查询互动状态
             if (userId != null) {
-                // 这里可以添加查询点赞、收藏、关注状态的逻辑
-                // 为了简化，先设置为false，实际项目中应该调用相应的service方法
-                response.setIsLiked(false);
-                response.setIsFavorited(false);
-                response.setIsFollowed(false);
-                log.debug("已设置用户互动状态: userId={}, contentId={}", userId, contentId);
+                try {
+                    // 查询用户是否已点赞该内容
+                    boolean isLiked = likeService.checkLikeStatus(userId, "CONTENT", contentId);
+                    response.setIsLiked(isLiked);
+                    
+                    // 查询用户是否已收藏该内容
+                    boolean isFavorited = favoriteService.checkFavoriteStatus(userId, "CONTENT", contentId);
+                    response.setIsFavorited(isFavorited);
+                    
+                    // 查询用户是否已关注该内容的作者
+                    boolean isFollowed = followService.checkFollowStatus(userId, content.getAuthorId());
+                    response.setIsFollowed(isFollowed);
+                    
+                    log.debug("查询用户互动状态成功: userId={}, contentId={}, liked={}, favorited={}, followed={}", 
+                            userId, contentId, isLiked, isFavorited, isFollowed);
+                } catch (Exception e) {
+                    log.warn("查询用户互动状态失败: userId={}, contentId={}", userId, contentId, e);
+                    // 如果查询失败，设置为默认值false
+                    response.setIsLiked(false);
+                    response.setIsFavorited(false);
+                    response.setIsFollowed(false);
+                }
             }
             
             log.info("查询内容详情成功: contentId={}, title={}", contentId, content.getTitle());
@@ -211,21 +233,13 @@ public class ContentController {
             
             // 转换为响应对象列表
             List<ContentResponse> responseList = contentList.stream()
-                .map(content -> {
-                    ContentResponse response = convertToResponse(content);
-                    
-                    // 如果提供了userId，查询互动状态
-                    if (userId != null) {
-                        // 这里可以添加查询点赞、收藏、关注状态的逻辑
-                        // 为了简化，先设置为false，实际项目中应该调用相应的service方法
-                        response.setIsLiked(false);
-                        response.setIsFavorited(false);
-                        response.setIsFollowed(false);
-                    }
-                    
-                    return response;
-                })
+                .map(this::convertToResponse)
                 .collect(Collectors.toList());
+            
+            // 批量设置用户互动状态（优化性能）
+            if (userId != null) {
+                batchSetInteractionStatus(responseList, userId);
+            }
             
             log.info("随机获取内容详情成功: count={}", responseList.size());
             return Result.success(responseList);
@@ -347,5 +361,82 @@ public class ContentController {
         response.setUpdateTime(content.getUpdateTime());
 
         return response;
+    }
+    
+    /**
+     * 批量查询用户对内容的互动状态
+     * 优化性能，减少数据库查询次数
+     */
+    private void batchSetInteractionStatus(List<ContentResponse> responses, Long userId) {
+        if (userId == null || responses == null || responses.isEmpty()) {
+            return;
+        }
+        
+        try {
+            // 提取所有内容ID和作者ID
+            List<Long> contentIds = responses.stream()
+                    .map(ContentResponse::getId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            List<Long> authorIds = responses.stream()
+                    .map(ContentResponse::getAuthorId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            // 批量查询点赞状态
+            Map<Long, Boolean> likeStatusMap = new HashMap<>();
+            for (Long contentId : contentIds) {
+                try {
+                    boolean isLiked = likeService.checkLikeStatus(userId, "CONTENT", contentId);
+                    likeStatusMap.put(contentId, isLiked);
+                } catch (Exception e) {
+                    log.warn("查询点赞状态失败: userId={}, contentId={}", userId, contentId, e);
+                    likeStatusMap.put(contentId, false);
+                }
+            }
+            
+            // 批量查询收藏状态
+            Map<Long, Boolean> favoriteStatusMap = new HashMap<>();
+            for (Long contentId : contentIds) {
+                try {
+                    boolean isFavorited = favoriteService.checkFavoriteStatus(userId, "CONTENT", contentId);
+                    favoriteStatusMap.put(contentId, isFavorited);
+                } catch (Exception e) {
+                    log.warn("查询收藏状态失败: userId={}, contentId={}", userId, contentId, e);
+                    favoriteStatusMap.put(contentId, false);
+                }
+            }
+            
+            // 批量查询关注状态
+            Map<Long, Boolean> followStatusMap = new HashMap<>();
+            for (Long authorId : authorIds) {
+                try {
+                    boolean isFollowed = followService.checkFollowStatus(userId, authorId);
+                    followStatusMap.put(authorId, isFollowed);
+                } catch (Exception e) {
+                    log.warn("查询关注状态失败: userId={}, authorId={}", userId, authorId, e);
+                    followStatusMap.put(authorId, false);
+                }
+            }
+            
+            // 设置互动状态
+            responses.forEach(response -> {
+                response.setIsLiked(likeStatusMap.getOrDefault(response.getId(), false));
+                response.setIsFavorited(favoriteStatusMap.getOrDefault(response.getId(), false));
+                response.setIsFollowed(followStatusMap.getOrDefault(response.getAuthorId(), false));
+            });
+            
+            log.debug("批量设置用户互动状态完成: userId={}, contentCount={}", userId, responses.size());
+            
+        } catch (Exception e) {
+            log.error("批量查询用户互动状态失败: userId={}", userId, e);
+            // 如果批量查询失败，设置所有状态为false
+            responses.forEach(response -> {
+                response.setIsLiked(false);
+                response.setIsFavorited(false);
+                response.setIsFollowed(false);
+            });
+        }
     }
 }
