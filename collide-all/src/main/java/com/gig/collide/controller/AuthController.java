@@ -231,6 +231,16 @@ public class AuthController {
         userInfo.put("lastLoginTime", user.getLastLoginTime());
         userInfo.put("loginCount", user.getLoginCount());
         userInfo.put("createTime", user.getCreateTime());
+        
+        // 添加统计信息
+        userInfo.put("followerCount", user.getFollowerCount() != null ? user.getFollowerCount() : 0L);
+        userInfo.put("followingCount", user.getFollowingCount() != null ? user.getFollowingCount() : 0L);
+        userInfo.put("contentCount", user.getContentCount() != null ? user.getContentCount() : 0L);
+        userInfo.put("likeCount", user.getLikeCount() != null ? user.getLikeCount() : 0L);
+        
+        log.debug("用户统计信息: userId={}, followerCount={}, followingCount={}, contentCount={}, likeCount={}", 
+                user.getId(), user.getFollowerCount(), user.getFollowingCount(), user.getContentCount(), user.getLikeCount());
+        
         return userInfo;
     }
 }

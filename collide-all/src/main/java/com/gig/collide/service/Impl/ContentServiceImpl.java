@@ -10,6 +10,7 @@ import com.gig.collide.Apientry.api.content.response.ContentResponse;
 import com.gig.collide.domain.Content;
 import com.gig.collide.domain.ContentPayment;
 import com.gig.collide.mapper.ContentMapper;
+import com.gig.collide.mapper.UserMapper;
 import com.gig.collide.service.ContentService;
 import com.gig.collide.service.ContentPaymentService;
 import com.gig.collide.service.FollowService;
@@ -48,6 +49,7 @@ public class ContentServiceImpl implements ContentService {
     private final LikeService likeService;
     private final FavoriteService favoriteService;
     private final CommentService commentService;
+    private final UserMapper userMapper;
 
     // =================== 核心CRUD功能（4个方法）===================
 
@@ -89,7 +91,19 @@ public class ContentServiceImpl implements ContentService {
         }
 
         contentMapper.insert(content);
-        log.info("内容创建成功: id={}", content.getId());
+        
+        // 如果直接发布，更新用户内容统计 +1
+        if ("PUBLISHED".equals(content.getStatus())) {
+            try {
+                userMapper.updateContentCount(content.getAuthorId(), 1);
+                log.info("用户内容统计更新成功: authorId={} contentCount+1", content.getAuthorId());
+            } catch (Exception e) {
+                log.error("更新用户内容统计失败: authorId={}", content.getAuthorId(), e);
+                // 统计更新失败不影响主业务
+            }
+        }
+        
+        log.info("内容创建成功: id={}, status={}", content.getId(), content.getStatus());
         return content;
     }
 
@@ -139,10 +153,40 @@ public class ContentServiceImpl implements ContentService {
             throw new IllegalArgumentException("内容ID不能为空");
         }
 
+        // 查询原有状态以便比较状态变更
+        Content originalContent = contentMapper.selectById(content.getId());
+        if (originalContent == null) {
+            throw new IllegalArgumentException("内容不存在");
+        }
+        
+        String oldStatus = originalContent.getStatus();
+        String newStatus = content.getStatus();
+
         content.setUpdateTime(LocalDateTime.now());
         contentMapper.updateById(content);
+        
+        // 处理状态变更导致的用户统计更新
+        if (newStatus != null && !newStatus.equals(oldStatus)) {
+            try {
+                if ("PUBLISHED".equals(newStatus) && !"PUBLISHED".equals(oldStatus)) {
+                    // 从非发布状态变为发布状态：内容数+1
+                    userMapper.updateContentCount(originalContent.getAuthorId(), 1);
+                    log.info("用户内容统计更新成功: authorId={} contentCount+1 ({}->{})", 
+                            originalContent.getAuthorId(), oldStatus, newStatus);
+                } else if ("PUBLISHED".equals(oldStatus) && !"PUBLISHED".equals(newStatus)) {
+                    // 从发布状态变为非发布状态：内容数-1
+                    userMapper.updateContentCount(originalContent.getAuthorId(), -1);
+                    log.info("用户内容统计更新成功: authorId={} contentCount-1 ({}->{})", 
+                            originalContent.getAuthorId(), oldStatus, newStatus);
+                }
+            } catch (Exception e) {
+                log.error("更新用户内容统计失败: authorId={}, oldStatus={}, newStatus={}", 
+                        originalContent.getAuthorId(), oldStatus, newStatus, e);
+                // 统计更新失败不影响主业务
+            }
+        }
 
-        log.info("内容更新成功: id={}", content.getId());
+        log.info("内容更新成功: id={}, status: {} -> {}", content.getId(), oldStatus, newStatus);
         return content;
     }
 
@@ -175,10 +219,29 @@ public class ContentServiceImpl implements ContentService {
         }
 
         try {
+            // 查询要删除的内容信息
+            Content content = contentMapper.selectById(contentId);
+            if (content == null) {
+                log.warn("要删除的内容不存在: contentId={}", contentId);
+                return false;
+            }
+            
             int result = contentMapper.softDeleteContent(contentId);
             boolean success = result > 0;
+            
             if (success) {
-                log.info("内容软删除成功: contentId={}", contentId);
+                // 如果删除的是已发布内容，更新用户内容统计 -1
+                if ("PUBLISHED".equals(content.getStatus())) {
+                    try {
+                        userMapper.updateContentCount(content.getAuthorId(), -1);
+                        log.info("用户内容统计更新成功: authorId={} contentCount-1 (删除已发布内容)", content.getAuthorId());
+                    } catch (Exception e) {
+                        log.error("更新用户内容统计失败: authorId={}", content.getAuthorId(), e);
+                        // 统计更新失败不影响主业务
+                    }
+                }
+                
+                log.info("内容软删除成功: contentId={}, status={}", contentId, content.getStatus());
             }
             return success;
         } catch (Exception e) {
