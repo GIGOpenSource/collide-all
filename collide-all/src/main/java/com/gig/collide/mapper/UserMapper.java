@@ -113,4 +113,40 @@ public interface UserMapper extends BaseMapper<User> {
      * @return VIP用户数量
      */
     Long countVipUsers(@Param("isVip") String isVip);
+
+    /**
+     * 增加用户关注数
+     *
+     * @param userId 用户ID
+     * @param increment 增量（正数增加，负数减少）
+     * @return 更新行数
+     */
+    int updateFollowingCount(@Param("userId") Long userId, @Param("increment") int increment);
+
+    /**
+     * 增加用户粉丝数
+     *
+     * @param userId 用户ID
+     * @param increment 增量（正数增加，负数减少）
+     * @return 更新行数
+     */
+    int updateFollowerCount(@Param("userId") Long userId, @Param("increment") int increment);
+
+    /**
+     * 增加用户获得点赞数
+     *
+     * @param userId 用户ID
+     * @param increment 增量（正数增加，负数减少）
+     * @return 更新行数
+     */
+    int updateLikeCount(@Param("userId") Long userId, @Param("increment") int increment);
+
+    /**
+     * 增加用户内容数
+     *
+     * @param userId 用户ID
+     * @param increment 增量（正数增加，负数减少）
+     * @return 更新行数
+     */
+    int updateContentCount(@Param("userId") Long userId, @Param("increment") int increment);
 }

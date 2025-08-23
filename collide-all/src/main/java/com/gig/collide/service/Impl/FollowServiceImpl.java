@@ -8,6 +8,7 @@ import com.gig.collide.Apientry.api.common.response.Result;
 import com.gig.collide.Apientry.api.follow.response.FollowResponse;
 import com.gig.collide.domain.Follow;
 import com.gig.collide.mapper.FollowMapper;
+import com.gig.collide.mapper.UserMapper;
 import com.gig.collide.service.FollowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 public class FollowServiceImpl implements FollowService {
 
     private final FollowMapper followMapper;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -82,6 +84,18 @@ public class FollowServiceImpl implements FollowService {
 
                 int result = followMapper.updateById(existingFollow);
                 if (result > 0) {
+                    // 更新用户统计：关注者的关注数+1，被关注者的粉丝数+1
+                    try {
+                        userMapper.updateFollowingCount(follow.getFollowerId(), 1);
+                        userMapper.updateFollowerCount(follow.getFolloweeId(), 1);
+                        log.info("用户统计更新成功: followerId={} following+1, followeeId={} follower+1", 
+                                follow.getFollowerId(), follow.getFolloweeId());
+                    } catch (Exception e) {
+                        log.error("更新用户统计失败: followerId={}, followeeId={}", 
+                                follow.getFollowerId(), follow.getFolloweeId(), e);
+                        // 统计更新失败不影响主业务
+                    }
+                    
                     log.info("重新激活关注关系成功: followerId={}, followeeId={}",
                             follow.getFollowerId(), follow.getFolloweeId());
                     return existingFollow;
@@ -98,6 +112,18 @@ public class FollowServiceImpl implements FollowService {
 
         int result = followMapper.insert(follow);
         if (result > 0) {
+            // 更新用户统计：关注者的关注数+1，被关注者的粉丝数+1
+            try {
+                userMapper.updateFollowingCount(follow.getFollowerId(), 1);
+                userMapper.updateFollowerCount(follow.getFolloweeId(), 1);
+                log.info("用户统计更新成功: followerId={} following+1, followeeId={} follower+1", 
+                        follow.getFollowerId(), follow.getFolloweeId());
+            } catch (Exception e) {
+                log.error("更新用户统计失败: followerId={}, followeeId={}", 
+                        follow.getFollowerId(), follow.getFolloweeId(), e);
+                // 统计更新失败不影响主业务
+            }
+            
             log.info("关注用户成功: followerId={}, followeeId={}",
                     follow.getFollowerId(), follow.getFolloweeId());
             return follow;
@@ -127,6 +153,17 @@ public class FollowServiceImpl implements FollowService {
         boolean success = result > 0;
 
         if (success) {
+            // 更新用户统计：关注者的关注数-1，被关注者的粉丝数-1
+            try {
+                userMapper.updateFollowingCount(followerId, -1);
+                userMapper.updateFollowerCount(followeeId, -1);
+                log.info("用户统计更新成功: followerId={} following-1, followeeId={} follower-1", 
+                        followerId, followeeId);
+            } catch (Exception e) {
+                log.error("更新用户统计失败: followerId={}, followeeId={}", followerId, followeeId, e);
+                // 统计更新失败不影响主业务
+            }
+            
             log.info("取消关注成功: followerId={}, followeeId={}", followerId, followeeId);
         } else {
             log.error("取消关注失败: followerId={}, followeeId={}", followerId, followeeId);

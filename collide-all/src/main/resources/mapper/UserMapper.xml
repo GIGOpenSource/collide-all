@@ -12,32 +12,34 @@
         <result column="email" property="email"/>
         <result column="phone" property="phone"/>
         <result column="avatar" property="avatar"/>
+        <result column="password_hash" property="passwordHash"/>
+        <result column="role" property="role"/>
         <result column="status" property="status"/>
+        <result column="bio" property="bio"/>
+        <result column="birthday" property="birthday"/>
+        <result column="gender" property="gender"/>
+        <result column="location" property="location"/>
+        <result column="follower_count" property="followerCount"/>
+        <result column="following_count" property="followingCount"/>
+        <result column="content_count" property="contentCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="vip_expire_time" property="vipExpireTime"/>
+        <result column="is_vip" property="isVip"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+        <result column="login_count" property="loginCount"/>
+        <result column="invite_code" property="inviteCode"/>
+        <result column="inviter_id" property="inviterId"/>
+        <result column="invited_count" property="invitedCount"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
-        <!-- 注意：以下字段在数据库表中不存在，但实体类中有，设置为null -->
-        <result column="null" property="passwordHash"/>
-        <result column="null" property="role"/>
-        <result column="null" property="bio"/>
-        <result column="null" property="birthday"/>
-        <result column="null" property="gender"/>
-        <result column="null" property="location"/>
-        <result column="null" property="followerCount"/>
-        <result column="null" property="followingCount"/>
-        <result column="null" property="contentCount"/>
-        <result column="null" property="likeCount"/>
-        <result column="null" property="vipExpireTime"/>
-        <result column="is_vip" property="isVip"/>
-        <result column="null" property="lastLoginTime"/>
-        <result column="null" property="loginCount"/>
-        <result column="null" property="inviteCode"/>
-        <result column="null" property="inviterId"/>
-        <result column="null" property="invitedCount"/>
     </resultMap>
 
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
-        id, username, nickname, email, phone, avatar, status, is_vip, create_time, update_time
+        id, username, nickname, email, phone, avatar, password_hash, role, status, bio, 
+        birthday, gender, location, follower_count, following_count, content_count, like_count,
+        vip_expire_time, is_vip, last_login_time, login_count, invite_code, inviter_id, 
+        invited_count, create_time, update_time
     </sql>
 
     <!-- 根据ID查询用户 -->
@@ -165,5 +167,37 @@
         FROM t_user
         WHERE is_vip = #{isVip}
     </select>
+
+    <!-- 更新用户关注数 -->
+    <update id="updateFollowingCount">
+        UPDATE t_user
+        SET following_count = GREATEST(following_count + #{increment}, 0),
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 更新用户粉丝数 -->
+    <update id="updateFollowerCount">
+        UPDATE t_user
+        SET follower_count = GREATEST(follower_count + #{increment}, 0),
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 更新用户获得点赞数 -->
+    <update id="updateLikeCount">
+        UPDATE t_user
+        SET like_count = GREATEST(like_count + #{increment}, 0),
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 更新用户内容数 -->
+    <update id="updateContentCount">
+        UPDATE t_user
+        SET content_count = GREATEST(content_count + #{increment}, 0),
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
 
 </mapper>

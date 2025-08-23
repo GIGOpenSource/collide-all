@@ -8,6 +8,7 @@ import com.gig.collide.Apientry.api.common.response.Result;
 import com.gig.collide.Apientry.api.like.response.LikeResponse;
 import com.gig.collide.domain.Like;
 import com.gig.collide.mapper.LikeMapper;
+import com.gig.collide.mapper.UserMapper;
 import com.gig.collide.service.LikeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
 public class LikeServiceImpl implements LikeService {
 
     private final LikeMapper likeMapper;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,6 +76,18 @@ public class LikeServiceImpl implements LikeService {
                 existingLike.setUserAvatar(like.getUserAvatar());
 
                 likeMapper.updateById(existingLike);
+                
+                // 更新被点赞内容作者的点赞统计 +1
+                if (existingLike.getTargetAuthorId() != null) {
+                    try {
+                        userMapper.updateLikeCount(existingLike.getTargetAuthorId(), 1);
+                        log.info("用户点赞统计更新成功: authorId={} likeCount+1", existingLike.getTargetAuthorId());
+                    } catch (Exception e) {
+                        log.error("更新用户点赞统计失败: authorId={}", existingLike.getTargetAuthorId(), e);
+                        // 统计更新失败不影响主业务
+                    }
+                }
+                
                 log.info("重新激活点赞记录: id={}", existingLike.getId());
                 return existingLike;
             }
@@ -86,6 +100,17 @@ public class LikeServiceImpl implements LikeService {
 
         int result = likeMapper.insert(like);
         if (result > 0) {
+            // 更新被点赞内容作者的点赞统计 +1
+            if (like.getTargetAuthorId() != null) {
+                try {
+                    userMapper.updateLikeCount(like.getTargetAuthorId(), 1);
+                    log.info("用户点赞统计更新成功: authorId={} likeCount+1", like.getTargetAuthorId());
+                } catch (Exception e) {
+                    log.error("更新用户点赞统计失败: authorId={}", like.getTargetAuthorId(), e);
+                    // 统计更新失败不影响主业务
+                }
+            }
+            
             log.info("创建点赞记录成功: id={}", like.getId());
             return like;
         } else {
@@ -111,6 +136,17 @@ public class LikeServiceImpl implements LikeService {
 
         int result = likeMapper.updateById(existingLike);
         if (result > 0) {
+            // 更新被点赞内容作者的点赞统计 -1
+            if (existingLike.getTargetAuthorId() != null) {
+                try {
+                    userMapper.updateLikeCount(existingLike.getTargetAuthorId(), -1);
+                    log.info("用户点赞统计更新成功: authorId={} likeCount-1", existingLike.getTargetAuthorId());
+                } catch (Exception e) {
+                    log.error("更新用户点赞统计失败: authorId={}", existingLike.getTargetAuthorId(), e);
+                    // 统计更新失败不影响主业务
+                }
+            }
+            
             log.info("取消点赞成功: id={}", existingLike.getId());
             return true;
         } else {
