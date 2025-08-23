@@ -59,12 +59,12 @@ public class UserInteractionResponse implements Serializable {
     /**
      * 目标对象作者昵称
      */
-    private String authorNickname;
+    private String targetAuthorNickname;
 
     /**
      * 目标对象作者头像
      */
-    private String authorAvatar;
+    private String targetAuthorAvatar;
 
     /**
      * 是否关注该内容作者

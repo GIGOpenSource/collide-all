@@ -14,6 +14,7 @@ import com.gig.collide.mapper.CommentMapper;
 import com.gig.collide.service.ContentService;
 import com.gig.collide.service.FollowService;
 import com.gig.collide.service.LikeService;
+import com.gig.collide.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,7 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
     private final ContentService contentService;
     private final FollowService followService;
     private final LikeService likeService;
+    private final UserService userService;
 
     @Override
     public Result<PageResponse<UserInteractionResponse>> getUserInteractions(UserInteractionQueryRequest request) {
@@ -279,6 +281,21 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 .filter(id -> id != null)
                 .collect(Collectors.toSet());
         
+        // 批量获取作者用户信息
+        Map<Long, com.gig.collide.domain.User> authorMap = new java.util.HashMap<>();
+        if (!authorIds.isEmpty()) {
+            authorIds.forEach(authorId -> {
+                try {
+                    com.gig.collide.domain.User user = userService.getUserById(authorId);
+                    if (user != null) {
+                        authorMap.put(authorId, user);
+                    }
+                } catch (Exception e) {
+                    log.warn("获取作者用户信息失败: authorId={}", authorId, e);
+                }
+            });
+        }
+        
         // 批量获取内容信息
         Map<Long, Content> contentMap = new java.util.HashMap<>();
         if (!contentIds.isEmpty()) {
@@ -335,14 +352,21 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 Content content = contentMap.get(like.getTargetId());
                 response.setTargetTitle(content.getTitle());
                 response.setTargetAuthorId(content.getAuthorId());
-                response.setAuthorNickname(content.getAuthorNickname());
-                response.setAuthorAvatar(content.getAuthorAvatar());
+                response.setTargetAuthorNickname(content.getAuthorNickname());
+                response.setTargetAuthorAvatar(content.getAuthorAvatar());
             } else {
                 // 如果无法获取内容信息，使用冗余字段的值
                 response.setTargetTitle(like.getTargetTitle());
                 response.setTargetAuthorId(like.getTargetAuthorId());
-                response.setAuthorNickname(null);
-                response.setAuthorAvatar(null);
+                // 通过targetAuthorId从t_user表中查找昵称和头像
+                if (like.getTargetAuthorId() != null && authorMap.containsKey(like.getTargetAuthorId())) {
+                    com.gig.collide.domain.User author = authorMap.get(like.getTargetAuthorId());
+                    response.setTargetAuthorNickname(author.getNickname());
+                    response.setTargetAuthorAvatar(author.getAvatar());
+                } else {
+                    response.setTargetAuthorNickname(null);
+                    response.setTargetAuthorAvatar(null);
+                }
             }
             
             // 设置关注状态
@@ -401,6 +425,21 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 .filter(id -> id != null)
                 .collect(Collectors.toSet());
         
+        // 批量获取作者用户信息
+        Map<Long, com.gig.collide.domain.User> authorMap = new java.util.HashMap<>();
+        if (!authorIds.isEmpty()) {
+            authorIds.forEach(authorId -> {
+                try {
+                    com.gig.collide.domain.User user = userService.getUserById(authorId);
+                    if (user != null) {
+                        authorMap.put(authorId, user);
+                    }
+                } catch (Exception e) {
+                    log.warn("获取作者用户信息失败: authorId={}", authorId, e);
+                }
+            });
+        }
+        
         // 批量获取内容信息
         Map<Long, Content> contentMap = new java.util.HashMap<>();
         if (!contentIds.isEmpty()) {
@@ -457,14 +496,21 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 Content content = contentMap.get(like.getTargetId());
                 response.setTargetTitle(content.getTitle());
                 response.setTargetAuthorId(content.getAuthorId());
-                response.setAuthorNickname(content.getAuthorNickname());
-                response.setAuthorAvatar(content.getAuthorAvatar());
+                response.setTargetAuthorNickname(content.getAuthorNickname());
+                response.setTargetAuthorAvatar(content.getAuthorAvatar());
             } else {
                 // 如果无法获取内容信息，使用冗余字段的值
                 response.setTargetTitle(like.getTargetTitle());
                 response.setTargetAuthorId(like.getTargetAuthorId());
-                response.setAuthorNickname(null);
-                response.setAuthorAvatar(null);
+                // 通过targetAuthorId从t_user表中查找昵称和头像
+                if (like.getTargetAuthorId() != null && authorMap.containsKey(like.getTargetAuthorId())) {
+                    com.gig.collide.domain.User author = authorMap.get(like.getTargetAuthorId());
+                    response.setTargetAuthorNickname(author.getNickname());
+                    response.setTargetAuthorAvatar(author.getAvatar());
+                } else {
+                    response.setTargetAuthorNickname(null);
+                    response.setTargetAuthorAvatar(null);
+                }
             }
             
             // 设置关注状态
@@ -591,8 +637,8 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 Content content = contentMap.get(comment.getTargetId());
                 response.setTargetTitle(content.getTitle());
                 response.setTargetAuthorId(content.getAuthorId());
-                response.setAuthorNickname(content.getAuthorNickname());
-                response.setAuthorAvatar(content.getAuthorAvatar());
+                response.setTargetAuthorNickname(content.getAuthorNickname());
+                response.setTargetAuthorAvatar(content.getAuthorAvatar());
                 
                 // 设置关注状态
                 if (content.getAuthorId() != null) {
@@ -614,8 +660,8 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 // 如果无法获取内容信息，设置默认值
                 response.setTargetTitle("未知内容");
                 response.setTargetAuthorId(null);
-                response.setAuthorNickname(null);
-                response.setAuthorAvatar(null);
+                response.setTargetAuthorNickname(null);
+                response.setTargetAuthorAvatar(null);
                 response.setIsFollowingAuthor(false);
                 response.setContentLikeCount(0L);
                 response.setIsLike(false);
@@ -726,8 +772,8 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 Content content = contentMap.get(comment.getTargetId());
                 response.setTargetTitle(content.getTitle());
                 response.setTargetAuthorId(content.getAuthorId());
-                response.setAuthorNickname(content.getAuthorNickname());
-                response.setAuthorAvatar(content.getAuthorAvatar());
+                response.setTargetAuthorNickname(content.getAuthorNickname());
+                response.setTargetAuthorAvatar(content.getAuthorAvatar());
                 
                 // 设置关注状态
                 if (content.getAuthorId() != null) {
@@ -749,8 +795,8 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 // 如果无法获取内容信息，设置默认值
                 response.setTargetTitle("未知内容");
                 response.setTargetAuthorId(null);
-                response.setAuthorNickname(null);
-                response.setAuthorAvatar(null);
+                response.setTargetAuthorNickname(null);
+                response.setTargetAuthorAvatar(null);
                 response.setIsFollowingAuthor(false);
                 response.setContentLikeCount(0L);
                 response.setIsLike(false);
@@ -906,11 +952,11 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                     if (response.getTargetAuthorId() == null) {
                         response.setTargetAuthorId(content.getAuthorId());
                     }
-                    if (response.getAuthorNickname() == null) {
-                        response.setAuthorNickname(content.getAuthorNickname());
+                    if (response.getTargetAuthorNickname() == null) {
+                        response.setTargetAuthorNickname(content.getAuthorNickname());
                     }
-                    if (response.getAuthorAvatar() == null) {
-                        response.setAuthorAvatar(content.getAuthorAvatar());
+                    if (response.getTargetAuthorAvatar() == null) {
+                        response.setTargetAuthorAvatar(content.getAuthorAvatar());
                     }
                 }
             } else if ("DYNAMIC".equals(response.getSubType())) {
@@ -1023,8 +1069,8 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 if (content != null) {
                     response.setTargetTitle(content.getTitle());
                     response.setTargetAuthorId(content.getAuthorId());
-                    response.setAuthorNickname(content.getAuthorNickname());
-                    response.setAuthorAvatar(content.getAuthorAvatar());
+                    response.setTargetAuthorNickname(content.getAuthorNickname());
+                    response.setTargetAuthorAvatar(content.getAuthorAvatar());
                     response.setContentCoverUrl(convertCoverUrlToArray(content.getCoverUrl()));
                     response.setContentDescription(content.getDescription());
                     
@@ -1063,8 +1109,8 @@ public class UserInteractionFacadeServiceImpl implements UserInteractionFacadeSe
                 if (content != null) {
                     response.setTargetTitle(content.getTitle());
                     response.setTargetAuthorId(content.getAuthorId());
-                    response.setAuthorNickname(content.getAuthorNickname());
-                    response.setAuthorAvatar(content.getAuthorAvatar());
+                    response.setTargetAuthorNickname(content.getAuthorNickname());
+                    response.setTargetAuthorAvatar(content.getAuthorAvatar());
                     response.setContentCoverUrl(convertCoverUrlToArray(content.getCoverUrl()));
                     response.setContentDescription(content.getDescription());
                     
