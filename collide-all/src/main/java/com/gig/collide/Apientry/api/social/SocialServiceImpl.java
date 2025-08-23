@@ -310,10 +310,15 @@ public class SocialServiceImpl implements SocialService {
         try {
             log.debug("门面服务 - 获取关注用户动态流: 用户ID={}, 状态={}, 页码={}/{}", userId, status, pageNumber, pageSize);
             
-            // 这里需要获取用户关注的其他用户ID列表
-            // 暂时使用空列表，实际应该调用关注服务
-            // TODO: 后续需要集成关注服务，获取用户关注的其他用户ID列表
-            List<Long> followingUserIds = List.of();
+            // 获取用户关注的其他用户ID列表
+            List<Long> followingUserIds;
+            try {
+                followingUserIds = followService.getFollowingAuthorIds(userId);
+                log.debug("获取关注用户ID列表成功: userId={}, followingCount={}", userId, followingUserIds.size());
+            } catch (Exception e) {
+                log.warn("获取关注用户ID列表失败: userId={}, error={}", userId, e.getMessage(), e);
+                followingUserIds = List.of(); // 如果获取失败，使用空列表
+            }
             // 防御性短路：当关注列表为空时，直接返回空分页，避免下发无意义SQL
             if (followingUserIds == null || followingUserIds.isEmpty()) {
                 PageResponse<SocialDynamicResponse> empty = new PageResponse<>();
