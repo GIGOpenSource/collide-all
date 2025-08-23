@@ -115,6 +115,11 @@ public interface ContentService {
      */
     Long increaseViewCount(Long contentId, Integer increment);
 
+    /**
+     * 更新评论数量（增量更新）
+     */
+    boolean updateCommentCount(Long contentId, Integer increment);
+
     // =================== Controller专用方法 ===================
 
     /**

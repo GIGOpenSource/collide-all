@@ -177,4 +177,14 @@ public interface MessageMapper extends BaseMapper<Message> {
      */
     List<Long> getRecentChatUsers(@Param("userId") Long userId,
                                 @Param("limit") Integer limit);
+
+    /**
+     * 查询t_message表数据
+     * 提供基础的消息查询功能
+     */
+    List<Message> queryMessages(@Param("queryCondition") Message queryCondition,
+                               @Param("startTime") LocalDateTime startTime,
+                               @Param("endTime") LocalDateTime endTime,
+                               @Param("currentPage") Integer currentPage,
+                               @Param("pageSize") Integer pageSize);
 }

@@ -60,7 +60,7 @@
         FROM t_inform
         WHERE is_deleted = 'N' AND is_sent = 'N'
         ORDER BY create_time ASC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -78,7 +78,7 @@
             AND send_time &lt;= #{endTime}
         </if>
         ORDER BY send_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>

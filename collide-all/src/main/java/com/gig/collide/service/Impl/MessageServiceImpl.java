@@ -1,10 +1,13 @@
 package com.gig.collide.service.Impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.domain.Message;
+import com.gig.collide.domain.User;
 import com.gig.collide.mapper.MessageMapper;
 import com.gig.collide.service.MessageService;
+import com.gig.collide.service.UserService;
 import com.gig.collide.Apientry.api.common.response.Result;
 import com.gig.collide.Apientry.api.common.response.PageResponse;
 import com.gig.collide.Apientry.api.message.response.MessageResponse;
@@ -16,6 +19,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 消息业务服务实现类 - 简洁版
@@ -32,6 +38,7 @@ import java.util.List;
 public class MessageServiceImpl implements MessageService {
 
     private final MessageMapper messageMapper;
+    private final UserService userService;
 
     // =================== 基础CRUD ===================
 
@@ -595,20 +602,111 @@ public class MessageServiceImpl implements MessageService {
                     .map(this::convertToResponse)
                     .toList();
             
+            // 新增逻辑：将相同发送者和接收者的消息合并为对话数组
+            List<MessageResponse> mergedResponses = mergeConversations(responses);
+            
             // 构建分页响应
             PageResponse<MessageResponse> pageResponse = new PageResponse<>();
-            pageResponse.setRecords(responses);
+            pageResponse.setRecords(mergedResponses);
             pageResponse.setTotal(messagePage.getTotal());
             pageResponse.setCurrentPage(currentPage);
             pageResponse.setPageSize(pageSize);
             pageResponse.setTotalPages((int) Math.ceil((double) messagePage.getTotal() / pageSize));
             
-            log.info("消息列表查询成功: 总数={}, 当前页={}, 页面大小={}", messagePage.getTotal(), currentPage, pageSize);
+            log.info("消息列表查询成功: 总数={}, 当前页={}, 页面大小={}, 合并后对话数量={}", 
+                    messagePage.getTotal(), currentPage, pageSize, mergedResponses.size());
             return Result.success(pageResponse);
             
         } catch (Exception e) {
             log.error("消息列表查询失败", e);
             return Result.error("消息列表查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 将相同发送者和接收者的消息合并为对话数组
+     * A为发送者，B为接收者，将两者的对话（相同的发送者和接收者）合并为一个数组
+     * 
+     * @param messages 原始消息列表
+     * @return 合并后的对话数组
+     */
+    private List<MessageResponse> mergeConversations(List<MessageResponse> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return messages;
+        }
+        
+        log.debug("开始合并对话，原始消息数量: {}", messages.size());
+        
+        // 使用Map来分组相同发送者和接收者的消息
+        Map<String, List<MessageResponse>> conversationGroups = new HashMap<>();
+        
+        for (MessageResponse message : messages) {
+            // 创建对话键：确保发送者和接收者的顺序一致（较小的ID在前）
+            String conversationKey = createConversationKey(message.getSenderId(), message.getReceiverId());
+            
+            conversationGroups.computeIfAbsent(conversationKey, k -> new ArrayList<>()).add(message);
+        }
+        
+        // 将每个对话组内的消息按时间排序，并合并为一个对话数组
+        List<MessageResponse> mergedConversations = new ArrayList<>();
+        
+        for (List<MessageResponse> conversation : conversationGroups.values()) {
+            // 按创建时间排序（正序，最新的在最后）
+            List<MessageResponse> sortedConversation = conversation.stream()
+                    .sorted((m1, m2) -> {
+                        if (m1.getCreateTime() == null && m2.getCreateTime() == null) {
+                            return 0;
+                        }
+                        if (m1.getCreateTime() == null) {
+                            return 1; // null值排在后面
+                        }
+                        if (m2.getCreateTime() == null) {
+                            return -1;
+                        }
+                        return m1.getCreateTime().compareTo(m2.getCreateTime()); // 正序
+                    })
+                    .toList();
+            
+            // 将排序后的对话添加到结果中
+            mergedConversations.addAll(sortedConversation);
+        }
+        
+        // 按最新消息时间倒序排序对话组
+        mergedConversations.sort((m1, m2) -> {
+            if (m1.getCreateTime() == null && m2.getCreateTime() == null) {
+                return 0;
+            }
+            if (m1.getCreateTime() == null) {
+                return 1;
+            }
+            if (m2.getCreateTime() == null) {
+                return -1;
+            }
+            return m2.getCreateTime().compareTo(m1.getCreateTime()); // 倒序，最新的对话在前
+        });
+        
+        log.debug("对话合并完成，合并后消息数量: {}", mergedConversations.size());
+        return mergedConversations;
+    }
+    
+    /**
+     * 创建对话键，确保发送者和接收者的顺序一致
+     * 使用较小的用户ID在前，较大的在后，确保相同的对话有相同的键
+     * 
+     * @param senderId 发送者ID
+     * @param receiverId 接收者ID
+     * @return 对话键
+     */
+    private String createConversationKey(Long senderId, Long receiverId) {
+        if (senderId == null || receiverId == null) {
+            return "null_" + (senderId != null ? senderId : "null") + "_" + (receiverId != null ? receiverId : "null");
+        }
+        
+        // 确保相同的对话有相同的键，不管谁是发送者谁是接收者
+        if (senderId.compareTo(receiverId) <= 0) {
+            return senderId + "_" + receiverId;
+        } else {
+            return receiverId + "_" + senderId;
         }
     }
 
@@ -635,5 +733,194 @@ public class MessageServiceImpl implements MessageService {
         response.setExtraData(message.getExtraData());
         
         return response;
+    }
+
+    @Override
+    public List<Message> queryMessages(Message queryCondition, LocalDateTime startTime, LocalDateTime endTime, 
+                                     Integer currentPage, Integer pageSize) {
+        log.info("查询t_message表数据: queryCondition={}, startTime={}, endTime={}, page={}/{}", 
+                queryCondition, startTime, endTime, currentPage, pageSize);
+        
+        try {
+            // 参数验证和默认值设置
+            if (currentPage == null || currentPage < 1) {
+                currentPage = 1;
+            }
+            if (pageSize == null || pageSize < 1 || pageSize > 100) {
+                pageSize = 20;
+            }
+            
+            // 构建查询条件
+            QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
+            
+            if (queryCondition != null) {
+                if (queryCondition.getId() != null) {
+                    queryWrapper.eq("id", queryCondition.getId());
+                }
+                if (queryCondition.getSenderId() != null) {
+                    queryWrapper.eq("sender_id", queryCondition.getSenderId());
+                }
+                if (queryCondition.getReceiverId() != null) {
+                    queryWrapper.eq("receiver_id", queryCondition.getReceiverId());
+                }
+                if (queryCondition.getMessageType() != null && !queryCondition.getMessageType().trim().isEmpty()) {
+                    queryWrapper.eq("message_type", queryCondition.getMessageType());
+                }
+                if (queryCondition.getStatus() != null && !queryCondition.getStatus().trim().isEmpty()) {
+                    queryWrapper.eq("status", queryCondition.getStatus());
+                }
+            }
+            
+            // 添加时间范围条件
+            if (startTime != null) {
+                queryWrapper.ge("create_time", startTime);
+            }
+            if (endTime != null) {
+                queryWrapper.le("create_time", endTime);
+            }
+            
+            // 排序
+            queryWrapper.orderByDesc("create_time");
+            
+            // 分页查询
+            Page<Message> page = new Page<>(currentPage, pageSize);
+            IPage<Message> messagePage = messageMapper.selectPage(page, queryWrapper);
+            
+            log.info("查询t_message表数据成功: 总数={}, 当前页={}, 页面大小={}", 
+                    messagePage.getTotal(), currentPage, pageSize);
+            
+            return messagePage.getRecords();
+            
+        } catch (Exception e) {
+            log.error("查询t_message表数据失败", e);
+            throw new RuntimeException("查询t_message表数据失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<MessageResponse> queryMessagesWithUserInfo(Message queryCondition, LocalDateTime startTime, LocalDateTime endTime,
+                                                          Integer currentPage, Integer pageSize) {
+        log.info("查询消息并包含用户信息: queryCondition={}, startTime={}, endTime={}, page={}/{}", 
+                queryCondition, startTime, endTime, currentPage, pageSize);
+        
+        try {
+            // 先查询消息列表
+            List<Message> messages = queryMessages(queryCondition, startTime, endTime, currentPage, pageSize);
+            
+            // 转换为MessageResponse并填充用户信息
+            List<MessageResponse> responses = messages.stream()
+                    .map(this::convertToResponseWithUserInfo)
+                    .toList();
+            
+            log.info("查询消息并包含用户信息成功: 消息数量={}", responses.size());
+            return responses;
+            
+        } catch (Exception e) {
+            log.error("查询消息并包含用户信息失败", e);
+            throw new RuntimeException("查询消息并包含用户信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 将Message实体转换为MessageResponse并填充用户信息
+     */
+    private MessageResponse convertToResponseWithUserInfo(Message message) {
+        if (message == null) {
+            return null;
+        }
+        
+        MessageResponse response = convertToResponse(message);
+        
+        // 填充发送者信息
+        if (message.getSenderId() != null) {
+            try {
+                User sender = userService.getUserById(message.getSenderId());
+                if (sender != null) {
+                    response.setSenderNickname(sender.getNickname());
+                    response.setSenderAvatar(sender.getAvatar());
+                }
+            } catch (Exception e) {
+                log.warn("获取发送者信息失败: senderId={}, error={}", message.getSenderId(), e.getMessage());
+            }
+        }
+        
+        // 填充接收者信息
+        if (message.getReceiverId() != null) {
+            try {
+                User receiver = userService.getUserById(message.getReceiverId());
+                if (receiver != null) {
+                    response.setReceiverNickname(receiver.getNickname());
+                    response.setReceiverAvatar(receiver.getAvatar());
+                }
+            } catch (Exception e) {
+                log.warn("获取接收者信息失败: receiverId={}, error={}", message.getReceiverId(), e.getMessage());
+            }
+        }
+        
+        return response;
+    }
+
+    @Override
+    public List<MessageResponse> queryChatHistoryWithUserInfo(Long userId1, Long userId2, String messageType, String status,
+                                                             LocalDateTime startTime, LocalDateTime endTime,
+                                                             Integer currentPage, Integer pageSize) {
+        log.info("查询两个用户之间的聊天记录并包含用户信息: userId1={}, userId2={}, type={}, status={}, page={}/{}", 
+                userId1, userId2, messageType, status, currentPage, pageSize);
+        
+        try {
+            // 构建查询条件：查询两个用户之间的所有消息（双向查询）
+            QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
+            
+            // 查询条件：(senderId = userId1 AND receiverId = userId2) OR (senderId = userId2 AND receiverId = userId1)
+            queryWrapper.and(wrapper -> wrapper
+                    .and(innerWrapper -> innerWrapper
+                            .eq("sender_id", userId1)
+                            .eq("receiver_id", userId2))
+                    .or(innerWrapper -> innerWrapper
+                            .eq("sender_id", userId2)
+                            .eq("receiver_id", userId1)));
+            
+            // 添加消息类型过滤
+            if (messageType != null && !messageType.trim().isEmpty()) {
+                queryWrapper.eq("message_type", messageType);
+            }
+            
+            // 添加状态过滤
+            if (status != null && !status.trim().isEmpty()) {
+                queryWrapper.eq("status", status);
+            }
+            
+            // 添加时间范围条件
+            if (startTime != null) {
+                queryWrapper.ge("create_time", startTime);
+            }
+            if (endTime != null) {
+                queryWrapper.le("create_time", endTime);
+            }
+            
+            // 排除已删除的消息
+            queryWrapper.ne("status", "deleted");
+            
+            // 按创建时间排序（正序，最新的在最后）
+            queryWrapper.orderByAsc("create_time");
+            
+            // 分页查询
+            Page<Message> page = new Page<>(currentPage, pageSize);
+            IPage<Message> messagePage = messageMapper.selectPage(page, queryWrapper);
+            
+            // 转换为MessageResponse并填充用户信息
+            List<MessageResponse> responses = messagePage.getRecords().stream()
+                    .map(this::convertToResponseWithUserInfo)
+                    .toList();
+            
+            log.info("查询聊天记录成功: 总数={}, 当前页={}, 页面大小={}, 实际返回数量={}", 
+                    messagePage.getTotal(), currentPage, pageSize, responses.size());
+            
+            return responses;
+            
+        } catch (Exception e) {
+            log.error("查询聊天记录失败: userId1={}, userId2={}", userId1, userId2, e);
+            throw new RuntimeException("查询聊天记录失败: " + e.getMessage());
+        }
     }
 }

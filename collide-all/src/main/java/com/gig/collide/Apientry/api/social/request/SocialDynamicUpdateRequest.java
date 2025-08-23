@@ -26,7 +26,7 @@ public class SocialDynamicUpdateRequest implements Serializable {
     @Size(max = 5000, message = "动态内容长度不能超过5000字符")
     private String content;
 
-    @Pattern(regexp = "^(text|image|video|share)$", message = "动态类型只能是text、image、video或share")
+    @Size(max = 20, message = "动态类型长度不能超过20字符")
     private String dynamicType;
 
     /**

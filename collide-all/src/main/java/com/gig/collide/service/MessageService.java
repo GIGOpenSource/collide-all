@@ -271,4 +271,50 @@ public interface MessageService {
     com.gig.collide.Apientry.api.common.response.Result<com.gig.collide.Apientry.api.common.response.PageResponse<com.gig.collide.Apientry.api.message.response.MessageResponse>> listMessagesForController(
             Long senderId, Long receiverId, String messageType, String status, Boolean isRead, String keyword,
             String orderBy, String orderDirection, Integer currentPage, Integer pageSize);
+
+    /**
+     * 查询t_message表数据
+     * 提供基础的消息查询功能
+     *
+     * @param queryCondition 查询条件
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 消息列表
+     */
+    List<Message> queryMessages(Message queryCondition, LocalDateTime startTime, LocalDateTime endTime, 
+                               Integer currentPage, Integer pageSize);
+
+    /**
+     * 查询消息并包含用户信息
+     * 返回包含发送者和接收者姓名、头像的消息列表
+     *
+     * @param queryCondition 查询条件
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 包含用户信息的消息响应列表
+     */
+    List<com.gig.collide.Apientry.api.message.response.MessageResponse> queryMessagesWithUserInfo(Message queryCondition, LocalDateTime startTime, LocalDateTime endTime,
+                                                   Integer currentPage, Integer pageSize);
+
+    /**
+     * 查询两个用户之间的聊天记录并包含用户信息
+     * 实现聊天会话功能，查询两个用户之间的所有消息（双向查询）
+     *
+     * @param userId1 用户1ID
+     * @param userId2 用户2ID
+     * @param messageType 消息类型（可选）
+     * @param status 消息状态（可选）
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 包含用户信息的聊天记录列表
+     */
+    List<com.gig.collide.Apientry.api.message.response.MessageResponse> queryChatHistoryWithUserInfo(Long userId1, Long userId2, String messageType, String status,
+                                                                                                     LocalDateTime startTime, LocalDateTime endTime,
+                                                                                                     Integer currentPage, Integer pageSize);
 }

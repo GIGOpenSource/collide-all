@@ -12,6 +12,7 @@ import com.gig.collide.service.ContentService;
 import com.gig.collide.service.LikeService;
 import com.gig.collide.service.FavoriteService;
 import com.gig.collide.service.FollowService;
+import com.gig.collide.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,7 @@ public class ContentController {
     private final LikeService likeService;
     private final FavoriteService favoriteService;
     private final FollowService followService;
+    private final CommentService commentService;
 
     /**
      * 创建内容（支持付费配置）
@@ -349,7 +351,9 @@ public class ContentController {
         // 统计信息
         response.setViewCount(content.getViewCount());
         response.setLikeCount(content.getLikeCount());
-        response.setCommentCount(content.getCommentCount());
+        // 动态查询评论数量
+        long commentCount = commentService.countTargetComments(content.getId(), "CONTENT");
+        response.setCommentCount(commentCount);
         response.setFavoriteCount(content.getFavoriteCount());
         response.setShareCount(content.getShareCount());
         response.setScoreCount(content.getScoreCount());

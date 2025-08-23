@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 /**
  * 点赞REST控制器 - MySQL 8.0 优化版
@@ -233,6 +236,39 @@ public class LikeController {
         } catch (Exception e) {
             log.error("批量检查点赞状态失败", e);
             return Result.error("批量检查点赞状态失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取用户对指定目标的点赞状态列表
+     * 用于前端列表页面的点赞状态回显
+     */
+    @GetMapping("/user-status/{userId}")
+    @Operation(summary = "获取用户点赞状态列表", description = "获取用户对指定类型目标的点赞状态列表")
+    public Result<Map<Long, Boolean>> getUserLikeStatus(
+            @Parameter(description = "用户ID") @PathVariable Long userId,
+            @Parameter(description = "点赞类型") @RequestParam String likeType,
+            @Parameter(description = "目标ID列表，逗号分隔") @RequestParam String targetIds) {
+        try {
+            log.info("REST请求 - 获取用户点赞状态列表: userId={}, likeType={}, targetIds={}", 
+                    userId, likeType, targetIds);
+            
+            if (targetIds == null || targetIds.trim().isEmpty()) {
+                return Result.success(new HashMap<>());
+            }
+            
+            // 解析目标ID列表
+            List<Long> targetIdList = Arrays.stream(targetIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::valueOf)
+                    .collect(Collectors.toList());
+            
+            Map<Long, Boolean> statusMap = likeService.batchCheckLikeStatus(userId, likeType, targetIdList);
+            return Result.success(statusMap);
+        } catch (Exception e) {
+            log.error("获取用户点赞状态列表失败: userId={}", userId, e);
+            return Result.error("获取用户点赞状态列表失败: " + e.getMessage());
         }
     }
 }

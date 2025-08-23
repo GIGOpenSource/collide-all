@@ -31,7 +31,7 @@ public class SocialDynamic {
     private String title;
 
     /**
-     * 动态类型：text、image、video、share
+     * 动态类型：支持任意类型，前端可自由定义
      */
     private String dynamicType;
 

@@ -38,12 +38,12 @@ public class SocialDynamicQueryRequest implements Serializable {
     private Long currentUserId;
 
     /**
-     * 动态类型：text、image、video、share
+     * 动态类型：支持任意类型
      */
     private String dynamicType;
 
     /**
-     * 分享目标类型：content、goods
+     * 分享目标类型：支持任意类型
      */
     private String shareTargetType;
 

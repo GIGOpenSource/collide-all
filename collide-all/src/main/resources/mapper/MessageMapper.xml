@@ -35,14 +35,6 @@
         <if test="status != null and status != ''">
             AND status = #{status}
         </if>
-        <if test="isRead != null">
-            <if test="isRead == true">
-                AND read_time IS NOT NULL
-            </if>
-            <if test="isRead == false">
-                AND read_time IS NULL
-            </if>
-        </if>
         <if test="keyword != null and keyword != ''">
             AND (
                 content LIKE CONCAT('%', #{keyword}, '%')

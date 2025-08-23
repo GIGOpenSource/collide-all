@@ -323,15 +323,6 @@
         SELECT COUNT(*)
         FROM t_comment
         WHERE target_id = #{targetId}
-        <if test="commentType != null and commentType != ''">
-            AND LOWER(comment_type) = LOWER(#{commentType})
-        </if>
-        <if test="parentCommentId != null">
-            AND parent_comment_id = #{parentCommentId}
-        </if>
-        <if test="status != null and status != ''">
-            AND LOWER(status) = LOWER(#{status})
-        </if>
         <if test="!includeDeleted">
             AND LOWER(status) != 'deleted'
         </if>

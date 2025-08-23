@@ -25,7 +25,7 @@ public class SocialDynamicCreateRequest implements Serializable {
     @Size(max = 200, message = "发布标题长度不能超过200字符")
     private String title;
 
-    @Pattern(regexp = "^(text|image|video|share)$", message = "动态类型只能是text、image、video或share")
+    @Size(max = 20, message = "动态类型长度不能超过20字符")
     private String dynamicType;
 
     /**
@@ -65,9 +65,9 @@ public class SocialDynamicCreateRequest implements Serializable {
     private String userAvatar;
 
     /**
-     * 分享目标类型：content、goods
+     * 分享目标类型
      */
-    @Pattern(regexp = "^(content|goods|dynamic)$", message = "分享目标类型只能是content、goods或dynamic")
+    @Size(max = 20, message = "分享目标类型长度不能超过20字符")
     private String shareTargetType;
 
     /**

@@ -104,9 +104,9 @@
         <if test="status != null and status != ''">
             AND status = #{status}
         </if>
-        <if test="dynamicType != null and dynamicType != ''">
-            AND dynamic_type = #{dynamicType}
-        </if>
+        AND dynamic_type = "video"
+
+
         ORDER BY create_time DESC
     </select>
 

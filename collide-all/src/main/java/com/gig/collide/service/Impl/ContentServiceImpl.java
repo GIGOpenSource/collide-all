@@ -15,6 +15,7 @@ import com.gig.collide.service.ContentPaymentService;
 import com.gig.collide.service.FollowService;
 import com.gig.collide.service.LikeService;
 import com.gig.collide.service.FavoriteService;
+import com.gig.collide.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,7 @@ public class ContentServiceImpl implements ContentService {
     private final FollowService followService;
     private final LikeService likeService;
     private final FavoriteService favoriteService;
+    private final CommentService commentService;
 
     // =================== 核心CRUD功能（4个方法）===================
 
@@ -347,6 +349,11 @@ public class ContentServiceImpl implements ContentService {
         return newViewCount;
     }
 
+    @Override
+    public boolean updateCommentCount(Long contentId, Integer increment) {
+        return false;//-- TODO --
+    }
+
     // =================== Controller专用方法 ===================
 
     @Override
@@ -578,7 +585,9 @@ public class ContentServiceImpl implements ContentService {
         response.setReviewStatus(content.getReviewStatus());
         response.setViewCount(content.getViewCount());
         response.setLikeCount(content.getLikeCount());
-        response.setCommentCount(content.getCommentCount());
+        // 动态查询评论数量
+        long commentCount = commentService.countTargetComments(content.getId(), "CONTENT");
+        response.setCommentCount(commentCount);
         response.setFavoriteCount(content.getFavoriteCount());
         response.setCreateTime(content.getCreateTime());
         response.setUpdateTime(content.getUpdateTime());
