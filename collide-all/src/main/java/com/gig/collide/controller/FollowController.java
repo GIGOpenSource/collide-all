@@ -6,7 +6,9 @@ import com.gig.collide.Apientry.api.common.response.Result;
 import com.gig.collide.Apientry.api.follow.request.FollowCreateRequest;
 import com.gig.collide.Apientry.api.follow.request.FollowUnfollowRequest;
 import com.gig.collide.domain.Follow;
+import com.gig.collide.domain.User;
 import com.gig.collide.service.FollowService;
+import com.gig.collide.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,6 +47,7 @@ import java.util.stream.Collectors;
 public class FollowController {
 
     private final FollowService followService;
+    private final UserService userService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
@@ -86,10 +89,40 @@ public class FollowController {
                 return Result.error("不能关注自己");
             }
             
-            // 创建关注对象
+            // 创建关注对象并填充用户信息
             Follow follow = new Follow();
             follow.setFollowerId(followerId);
             follow.setFolloweeId(followeeId);
+            
+            // 查询并填充关注者信息
+            try {
+                User follower = userService.getUserById(followerId);
+                if (follower != null) {
+                    follow.setFollowerNickname(follower.getNickname());
+                    follow.setFollowerAvatar(follower.getAvatar());
+                    log.debug("关注者信息填充成功: followerId={}, nickname={}", followerId, follower.getNickname());
+                } else {
+                    log.warn("关注者不存在: followerId={}", followerId);
+                }
+            } catch (Exception e) {
+                log.warn("查询关注者信息失败: followerId={}, error={}", followerId, e.getMessage());
+                // 继续执行，不阻断关注流程
+            }
+            
+            // 查询并填充被关注者信息
+            try {
+                User followee = userService.getUserById(followeeId);
+                if (followee != null) {
+                    follow.setFolloweeNickname(followee.getNickname());
+                    follow.setFolloweeAvatar(followee.getAvatar());
+                    log.debug("被关注者信息填充成功: followeeId={}, nickname={}", followeeId, followee.getNickname());
+                } else {
+                    log.warn("被关注者不存在: followeeId={}", followeeId);
+                }
+            } catch (Exception e) {
+                log.warn("查询被关注者信息失败: followeeId={}, error={}", followeeId, e.getMessage());
+                // 继续执行，不阻断关注流程
+            }
             
             // 调用服务层
             Follow createdFollow = followService.followUser(follow);
