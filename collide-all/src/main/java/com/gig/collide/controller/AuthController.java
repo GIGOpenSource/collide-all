@@ -2,11 +2,13 @@ package com.gig.collide.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.gig.collide.Apientry.api.common.response.Result;
+import com.gig.collide.Apientry.api.auth.request.LoginRequest;
 import com.gig.collide.domain.User;
 import com.gig.collide.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -31,26 +33,61 @@ public class AuthController {
     private final UserService userService;
 
     /**
-     * 用户登录
+     * 用户登录 - 支持form-data参数
      * 
      * @param username 用户名
      * @param password 密码
      * @return 登录结果，包含token和用户信息
      */
     @PostMapping("/login")
-    @Operation(summary = "用户登录", description = "用户登录并返回认证token")
+    @Operation(summary = "用户登录 (form-data)", description = "用户登录并返回认证token，支持form-data参数")
     public Result<Map<String, Object>> login(
             @Parameter(description = "用户名", required = true) @RequestParam String username,
             @Parameter(description = "密码", required = true) @RequestParam String password) {
         
+        return performLogin(username, password);
+    }
+
+    /**
+     * 用户登录 - 支持JSON请求体
+     * 
+     * @param loginRequest 登录请求对象
+     * @return 登录结果，包含token和用户信息
+     */
+    @PostMapping(value = "/login", consumes = "application/json")
+    @Operation(summary = "用户登录 (JSON)", description = "用户登录并返回认证token，支持JSON请求体")
+    public Result<Map<String, Object>> loginWithJson(
+            @Valid @RequestBody LoginRequest loginRequest) {
+        
+        return performLogin(loginRequest.getUsername(), loginRequest.getPassword());
+    }
+
+    /**
+     * 执行登录逻辑的通用方法
+     * 支持用户不存在时自动注册
+     * 
+     * @param username 用户名
+     * @param password 密码
+     * @return 登录结果，包含token和用户信息
+     */
+    private Result<Map<String, Object>> performLogin(String username, String password) {
         try {
             log.info("用户登录请求: username={}", username);
             
             // 1. 根据用户名查询用户
             User user = userService.getUserByUsername(username);
+            boolean isNewUser = false;
+            
             if (user == null) {
-                log.warn("登录失败: 用户不存在, username={}", username);
-                return Result.error("用户名或密码错误");
+                // 用户不存在，自动注册新用户
+                log.info("用户不存在，开始自动注册: username={}", username);
+                user = createNewUser(username, password);
+                if (user == null) {
+                    log.error("自动注册失败: username={}", username);
+                    return Result.error("用户注册失败，请稍后重试");
+                }
+                isNewUser = true;
+                log.info("用户自动注册成功: username={}, userId={}", username, user.getId());
             }
             
             // 2. 检查用户状态
@@ -59,17 +96,18 @@ public class AuthController {
                 return Result.error("用户账号已被禁用");
             }
             
-            // 3. 验证密码（这里使用默认密码进行演示）
-            // 在实际项目中，应该从数据库获取加密后的密码进行验证
-            String defaultPassword = "password123";
-            if (!defaultPassword.equals(password)) {
-                log.warn("登录失败: 密码错误, username={}", username);
+            // 3. 验证密码 - 统一逻辑：用户输入密码与数据库存储密码比对
+            if (!password.equals(user.getPasswordHash())) {
+                log.warn("登录失败: 密码错误, username={}, 输入密码=[{}], 存储密码=[{}]", 
+                        username, password, user.getPasswordHash());
                 return Result.error("用户名或密码错误");
             }
             
-            // 4. 更新登录信息
-            user.updateLoginInfo();
-            userService.updateUser(user);
+            // 4. 更新登录信息（新用户在创建时已设置，老用户需要更新）
+            if (!isNewUser) {
+                user.updateLoginInfo();
+                userService.updateUser(user);
+            }
             
             // 5. 使用Sa-Token进行登录
             StpUtil.login(user.getId());
@@ -81,14 +119,83 @@ public class AuthController {
             responseData.put("tokenName", "Authorization");
             responseData.put("expiresIn", 2592000); // 30天
             responseData.put("userInfo", buildUserInfo(user));
+            responseData.put("isNewUser", isNewUser); // 标识是否为新注册用户
             
-            log.info("用户登录成功: username={}, userId={}", username, user.getId());
+            log.info("用户登录成功: username={}, userId={}, isNewUser={}", username, user.getId(), isNewUser);
             return Result.success(responseData);
             
         } catch (Exception e) {
             log.error("登录异常", e);
             return Result.error("登录失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 创建新用户
+     * 
+     * @param username 用户名
+     * @param password 密码
+     * @return 创建的用户对象，失败返回null
+     */
+    private User createNewUser(String username, String password) {
+        try {
+            User newUser = new User();
+            
+            // 基本信息
+            newUser.setUsername(username);
+            newUser.setNickname(username); // 默认昵称为用户名
+            newUser.setPasswordHash(password); // 实际应该加密存储
+            
+            // 默认状态和角色
+            newUser.setStatus("active");
+            newUser.setRole("user");
+            
+            // 默认头像
+            newUser.setAvatar("https://example.com/default-avatar.jpg");
+            
+            // 初始化统计字段
+            newUser.setFollowerCount(0L);
+            newUser.setFollowingCount(0L);
+            newUser.setContentCount(0L);
+            newUser.setLikeCount(0L);
+            newUser.setInvitedCount(0L);
+            
+            // VIP相关
+            newUser.setIsVip("N");
+            
+            // 登录信息
+            newUser.setLoginCount(1L);
+            newUser.setLastLoginTime(java.time.LocalDateTime.now());
+            
+            // 时间戳
+            newUser.setCreateTime(java.time.LocalDateTime.now());
+            newUser.setUpdateTime(java.time.LocalDateTime.now());
+            
+            // 生成邀请码（可选）
+            newUser.setInviteCode(generateInviteCode(username));
+            
+            // 保存到数据库
+            User savedUser = userService.createUser(newUser);
+            
+            log.info("新用户创建成功: username={}, userId={}", username, savedUser.getId());
+            return savedUser;
+            
+        } catch (Exception e) {
+            log.error("创建新用户失败: username={}, error={}", username, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 生成邀请码
+     * 
+     * @param username 用户名
+     * @return 邀请码
+     */
+    private String generateInviteCode(String username) {
+        // 简单的邀请码生成逻辑：用户名 + 时间戳后6位
+        long timestamp = System.currentTimeMillis();
+        return username.toUpperCase() + String.valueOf(timestamp).substring(7);
     }
 
     /**

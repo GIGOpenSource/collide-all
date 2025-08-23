@@ -56,33 +56,64 @@ public class FollowController {
     @PostMapping("/create")
     @Operation(summary = "关注用户", description = "创建关注关系")
     public Result<FollowResponse> followUser(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（下划线格式）", required = false) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
             @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
-            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（下划线格式）", required = false) @RequestParam(value = "followee_id", required = false) Long followeeIdUnderscore,
+            @Parameter(description = "被关注者ID（驼峰格式）", required = false) @RequestParam(value = "followeeId", required = false) Long followeeIdCamel,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "关注请求对象") @RequestBody(required = false) FollowCreateRequest request) {
         
-        // 参数兼容性处理：支持下划线和驼峰两种格式
-        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
+        // =================== 完整的参数兼容性处理 ===================
         
-        // 优先使用请求体参数，如果没有则使用查询参数
-        if (request != null) {
-            followerId = request.getFollowerId();
-            followeeId = request.getFolloweeId(); // 注意：请求对象中字段名是followeeId，与数据库保持一致
+        // 1. 处理关注者ID的多种格式兼容
+        Long followerId = null;
+        if (followerIdUnderscore != null) {
+            followerId = followerIdUnderscore;
+            log.debug("使用下划线格式关注者ID: follower_id={}", followerIdUnderscore);
+        } else if (followerIdCamel != null) {
+            followerId = followerIdCamel;
+            log.debug("使用驼峰格式关注者ID: followerId={}", followerIdCamel);
         }
         
-        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
-        if (followeeId == null && followedId != null) {
+        // 2. 处理被关注者ID的多种格式兼容
+        Long followeeId = null;
+        if (followeeIdUnderscore != null) {
+            followeeId = followeeIdUnderscore;
+            log.debug("使用下划线格式被关注者ID: followee_id={}", followeeIdUnderscore);
+        } else if (followeeIdCamel != null) {
+            followeeId = followeeIdCamel;
+            log.debug("使用驼峰格式被关注者ID: followeeId={}", followeeIdCamel);
+        } else if (followedId != null) {
             followeeId = followedId;
-            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
+            log.debug("使用兼容参数被关注者ID: followedId={}", followedId);
         }
+        
+        // 3. 请求体参数优先级最高，如果存在则覆盖查询参数
+        if (request != null) {
+            if (request.getFollowerId() != null) {
+                followerId = request.getFollowerId();
+                log.debug("使用请求体关注者ID: followerId={}", followerId);
+            }
+            
+            // 处理被关注者ID的请求体兼容性
+            if (request.getFolloweeId() != null) {
+                followeeId = request.getFolloweeId();
+                log.debug("使用请求体被关注者ID: followeeId={}", followeeId);
+            } else if (request.getFollowedId() != null) {
+                followeeId = request.getFollowedId();
+                log.debug("使用请求体兼容参数被关注者ID: followedId={}", followeeId);
+            }
+        }
+        
+        // 4. 参数处理结果日志
+        log.debug("参数处理结果: followerId={}, followeeId={}", followerId, followeeId);
         
         try {
             log.info("REST请求 - 关注用户: followerId={}, followeeId={}", followerId, followeeId);
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
+                return Result.error("关注者ID(follower_id/followerId)和被关注者ID(followee_id/followeeId/followedId)不能为空");
             }
             
             if (followerId.equals(followeeId)) {
@@ -143,33 +174,63 @@ public class FollowController {
     @PostMapping("/unfollow")
     @Operation(summary = "取消关注", description = "取消关注关系")
     public Result<Void> unfollowUser(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（下划线格式）", required = false) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
             @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
-            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（下划线格式）", required = false) @RequestParam(value = "followee_id", required = false) Long followeeIdUnderscore,
+            @Parameter(description = "被关注者ID（驼峰格式）", required = false) @RequestParam(value = "followeeId", required = false) Long followeeIdCamel,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId,
             @Parameter(description = "取消关注请求对象") @RequestBody(required = false) FollowUnfollowRequest request) {
         
-        // 参数兼容性处理：支持下划线和驼峰两种格式
-        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
+        // =================== 完整的参数兼容性处理 ===================
         
-        // 优先使用请求体参数，如果没有则使用查询参数
-        if (request != null) {
-            followerId = request.getFollowerId();
-            followeeId = request.getFolloweeId(); // 注意：请求对象中字段名是followeeId，与数据库保持一致
+        // 1. 处理关注者ID的多种格式兼容
+        Long followerId = null;
+        if (followerIdUnderscore != null) {
+            followerId = followerIdUnderscore;
+            log.debug("使用下划线格式关注者ID: follower_id={}", followerIdUnderscore);
+        } else if (followerIdCamel != null) {
+            followerId = followerIdCamel;
+            log.debug("使用驼峰格式关注者ID: followerId={}", followerIdCamel);
         }
         
-        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
-        if (followeeId == null && followedId != null) {
+        // 2. 处理被关注者ID的多种格式兼容
+        Long followeeId = null;
+        if (followeeIdUnderscore != null) {
+            followeeId = followeeIdUnderscore;
+            log.debug("使用下划线格式被关注者ID: followee_id={}", followeeIdUnderscore);
+        } else if (followeeIdCamel != null) {
+            followeeId = followeeIdCamel;
+            log.debug("使用驼峰格式被关注者ID: followeeId={}", followeeIdCamel);
+        } else if (followedId != null) {
             followeeId = followedId;
-            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
+            log.debug("使用兼容参数被关注者ID: followedId={}", followedId);
         }
+        
+        // 3. 请求体参数优先级最高，如果存在则覆盖查询参数
+        if (request != null) {
+            if (request.getFollowerId() != null) {
+                followerId = request.getFollowerId();
+                log.debug("使用请求体关注者ID: followerId={}", followerId);
+            }
+            // 处理被关注者ID的请求体兼容性
+            if (request.getFolloweeId() != null) {
+                followeeId = request.getFolloweeId();
+                log.debug("使用请求体被关注者ID: followeeId={}", followeeId);
+            } else if (request.getFollowedId() != null) {
+                followeeId = request.getFollowedId();
+                log.debug("使用请求体兼容参数被关注者ID: followedId={}", followeeId);
+            }
+        }
+        
+        // 4. 参数处理结果日志
+        log.debug("参数处理结果: followerId={}, followeeId={}", followerId, followeeId);
         
         try {
             log.info("REST请求 - 取消关注: followerId={}, followeeId={}", followerId, followeeId);
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
+                return Result.error("关注者ID(follower_id/followerId)和被关注者ID(followee_id/followeeId/followedId)不能为空");
             }
             
             // 调用服务层
@@ -192,30 +253,46 @@ public class FollowController {
     @GetMapping("/check")
     @Operation(summary = "检查关注状态", description = "查询用户是否已关注目标用户")
     public Result<Boolean> checkFollowStatus(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（下划线格式）", required = false) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
             @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
-            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（下划线格式）", required = false) @RequestParam(value = "followee_id", required = false) Long followeeIdUnderscore,
+            @Parameter(description = "被关注者ID（驼峰格式）", required = false) @RequestParam(value = "followeeId", required = false) Long followeeIdCamel,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId) {
         
-        // 调试日志：查看原始参数值
-        log.info("原始参数 - followerIdUnderscore: {}, followerIdCamel: {}, followeeId: {}, followedId: {}", 
-                 followerIdUnderscore, followerIdCamel, followeeId, followedId);
+        // =================== 完整的参数兼容性处理 ===================
         
-        // 参数兼容性处理：支持下划线和驼峰两种格式
-        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
-        
-        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
-        if (followeeId == null && followedId != null) {
-            followeeId = followedId;
-            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
+        // 1. 处理关注者ID的多种格式兼容
+        Long followerId = null;
+        if (followerIdUnderscore != null) {
+            followerId = followerIdUnderscore;
+            log.debug("使用下划线格式关注者ID: follower_id={}", followerIdUnderscore);
+        } else if (followerIdCamel != null) {
+            followerId = followerIdCamel;
+            log.debug("使用驼峰格式关注者ID: followerId={}", followerIdCamel);
         }
+        
+        // 2. 处理被关注者ID的多种格式兼容
+        Long followeeId = null;
+        if (followeeIdUnderscore != null) {
+            followeeId = followeeIdUnderscore;
+            log.debug("使用下划线格式被关注者ID: followee_id={}", followeeIdUnderscore);
+        } else if (followeeIdCamel != null) {
+            followeeId = followeeIdCamel;
+            log.debug("使用驼峰格式被关注者ID: followeeId={}", followeeIdCamel);
+        } else if (followedId != null) {
+            followeeId = followedId;
+            log.debug("使用兼容参数被关注者ID: followedId={}", followedId);
+        }
+        
+        // 3. 参数处理结果日志
+        log.debug("参数处理结果: followerId={}, followeeId={}", followerId, followeeId);
         
         try {
             log.info("REST请求 - 检查关注状态: followerId={}, followeeId={}", followerId, followeeId);
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
+                return Result.error("关注者ID(follower_id/followerId)和被关注者ID(followee_id/followeeId/followedId)不能为空");
             }
             
             // 调用服务层
@@ -518,26 +595,46 @@ public class FollowController {
     @PostMapping("/reactivate")
     @Operation(summary = "重新激活关注关系", description = "将cancelled状态的关注重新设置为active")
     public Result<Boolean> reactivateFollow(
-            @Parameter(description = "关注者ID", required = true) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
+            @Parameter(description = "关注者ID（下划线格式）", required = false) @RequestParam(value = "follower_id", required = false) Long followerIdUnderscore,
             @Parameter(description = "关注者ID（驼峰格式）", required = false) @RequestParam(value = "followerId", required = false) Long followerIdCamel,
-            @Parameter(description = "被关注者ID", required = true) @RequestParam(value = "followee_id", required = false) Long followeeId,
+            @Parameter(description = "被关注者ID（下划线格式）", required = false) @RequestParam(value = "followee_id", required = false) Long followeeIdUnderscore,
+            @Parameter(description = "被关注者ID（驼峰格式）", required = false) @RequestParam(value = "followeeId", required = false) Long followeeIdCamel,
             @Parameter(description = "被关注者ID（兼容参数）", required = false) @RequestParam(value = "followedId", required = false) Long followedId) {
         
-        // 参数兼容性处理：支持下划线和驼峰两种格式
-        Long followerId = followerIdUnderscore != null ? followerIdUnderscore : followerIdCamel;
+        // =================== 完整的参数兼容性处理 ===================
         
-        // 兼容处理：如果传入的是followedId参数，则使用它作为followeeId
-        if (followeeId == null && followedId != null) {
-            followeeId = followedId;
-            log.info("使用兼容参数: followedId={} 作为 followeeId", followedId);
+        // 1. 处理关注者ID的多种格式兼容
+        Long followerId = null;
+        if (followerIdUnderscore != null) {
+            followerId = followerIdUnderscore;
+            log.debug("使用下划线格式关注者ID: follower_id={}", followerIdUnderscore);
+        } else if (followerIdCamel != null) {
+            followerId = followerIdCamel;
+            log.debug("使用驼峰格式关注者ID: followerId={}", followerIdCamel);
         }
+        
+        // 2. 处理被关注者ID的多种格式兼容
+        Long followeeId = null;
+        if (followeeIdUnderscore != null) {
+            followeeId = followeeIdUnderscore;
+            log.debug("使用下划线格式被关注者ID: followee_id={}", followeeIdUnderscore);
+        } else if (followeeIdCamel != null) {
+            followeeId = followeeIdCamel;
+            log.debug("使用驼峰格式被关注者ID: followeeId={}", followeeIdCamel);
+        } else if (followedId != null) {
+            followeeId = followedId;
+            log.debug("使用兼容参数被关注者ID: followedId={}", followedId);
+        }
+        
+        // 3. 参数处理结果日志
+        log.debug("参数处理结果: followerId={}, followeeId={}", followerId, followeeId);
         
         try {
             log.info("REST请求 - 重新激活关注: followerId={}, followeeId={}", followerId, followeeId);
             
             // 参数验证
             if (followerId == null || followeeId == null) {
-                return Result.error("关注者ID(followerId)和被关注者ID(followeeId或followedId)不能为空");
+                return Result.error("关注者ID(follower_id/followerId)和被关注者ID(followee_id/followeeId/followedId)不能为空");
             }
 
             // 调用服务层

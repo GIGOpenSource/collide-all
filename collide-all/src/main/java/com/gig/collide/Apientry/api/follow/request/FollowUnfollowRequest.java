@@ -30,4 +30,10 @@ public class FollowUnfollowRequest implements Serializable {
      */
     @NotNull(message = "被关注者ID不能为空")
     private Long followeeId;
+
+    /**
+     * 被关注者用户ID（兼容字段）
+     * 支持 followedId 格式，用于向后兼容
+     */
+    private Long followedId;
 }
