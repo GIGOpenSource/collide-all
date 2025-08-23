@@ -431,6 +431,17 @@ public class FollowServiceImpl implements FollowService {
         boolean success = result > 0;
 
         if (success) {
+            // 更新用户统计：关注者的关注数+1，被关注者的粉丝数+1
+            try {
+                userMapper.updateFollowingCount(followerId, 1);
+                userMapper.updateFollowerCount(followeeId, 1);
+                log.info("用户统计更新成功: followerId={} following+1, followeeId={} follower+1", 
+                        followerId, followeeId);
+            } catch (Exception e) {
+                log.error("更新用户统计失败: followerId={}, followeeId={}", followerId, followeeId, e);
+                // 统计更新失败不影响主业务
+            }
+            
             log.info("重新激活关注关系成功: followerId={}, followeeId={}", followerId, followeeId);
         } else {
             log.warn("重新激活关注关系失败: followerId={}, followeeId={}", followerId, followeeId);
@@ -453,11 +464,46 @@ public class FollowServiceImpl implements FollowService {
             throw new IllegalArgumentException("无效的状态值: " + status);
         }
 
+        // 先查询当前状态，以便正确更新统计
+        Follow currentFollow = followMapper.findByFollowerAndFollowee(followerId, followeeId, null);
+        if (currentFollow == null) {
+            log.warn("关注关系不存在: followerId={}, followeeId={}", followerId, followeeId);
+            return false;
+        }
+
+        String oldStatus = currentFollow.getStatus();
+        if (oldStatus.equals(status)) {
+            log.info("状态未发生变化: followerId={}, followeeId={}, status={}", followerId, followeeId, status);
+            return true; // 状态未变化，视为成功
+        }
+
         int result = followMapper.updateFollowStatus(followerId, followeeId, status);
         boolean success = result > 0;
 
         if (success) {
-            log.info("更新关注状态成功: followerId={}, followeeId={}, status={}", followerId, followeeId, status);
+            // 根据状态变化更新用户统计
+            try {
+                if ("cancelled".equals(oldStatus) && "active".equals(status)) {
+                    // 从取消到激活：关注数+1，粉丝数+1
+                    userMapper.updateFollowingCount(followerId, 1);
+                    userMapper.updateFollowerCount(followeeId, 1);
+                    log.info("用户统计更新成功: followerId={} following+1, followeeId={} follower+1", 
+                            followerId, followeeId);
+                } else if ("active".equals(oldStatus) && "cancelled".equals(status)) {
+                    // 从激活到取消：关注数-1，粉丝数-1
+                    userMapper.updateFollowingCount(followerId, -1);
+                    userMapper.updateFollowerCount(followeeId, -1);
+                    log.info("用户统计更新成功: followerId={} following-1, followeeId={} follower-1", 
+                            followerId, followeeId);
+                }
+            } catch (Exception e) {
+                log.error("更新用户统计失败: followerId={}, followeeId={}, oldStatus={}, newStatus={}", 
+                        followerId, followeeId, oldStatus, status, e);
+                // 统计更新失败不影响主业务
+            }
+            
+            log.info("更新关注状态成功: followerId={}, followeeId={}, {} -> {}", 
+                    followerId, followeeId, oldStatus, status);
         } else {
             log.warn("更新关注状态失败: followerId={}, followeeId={}, status={}", followerId, followeeId, status);
         }

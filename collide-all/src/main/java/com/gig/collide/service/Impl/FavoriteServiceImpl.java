@@ -13,6 +13,8 @@ import com.gig.collide.Apientry.api.goods.response.GoodsResponse;
 import com.gig.collide.converter.FavoriteConverter;
 import com.gig.collide.domain.Favorite;
 import com.gig.collide.mapper.FavoriteMapper;
+import com.gig.collide.mapper.ContentMapper;
+import com.gig.collide.mapper.GoodsMapper;
 import com.gig.collide.service.FavoriteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +44,8 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     private final FavoriteMapper favoriteMapper;
     private final FavoriteConverter favoriteConverter;
+    private final ContentMapper contentMapper;
+    private final GoodsMapper goodsMapper;
 
     // =================== 核心业务方法实现 ===================
 
@@ -91,6 +95,9 @@ public class FavoriteServiceImpl implements FavoriteService {
 
                 int result = favoriteMapper.updateById(existingFavorite);
                 if (result > 0) {
+                    // 更新目标对象的收藏统计 +1
+                    updateTargetFavoriteCount(existingFavorite.getFavoriteType(), existingFavorite.getTargetId(), 1);
+                    
                     log.info("重新激活收藏成功: userId={}, favoriteType={}, targetId={}",
                             favorite.getUserId(), favorite.getFavoriteType(), favorite.getTargetId());
                     return existingFavorite;
@@ -107,6 +114,9 @@ public class FavoriteServiceImpl implements FavoriteService {
 
         int result = favoriteMapper.insert(favorite);
         if (result > 0) {
+            // 更新目标对象的收藏统计 +1
+            updateTargetFavoriteCount(favorite.getFavoriteType(), favorite.getTargetId(), 1);
+            
             log.info("添加收藏成功: userId={}, favoriteType={}, targetId={}",
                     favorite.getUserId(), favorite.getFavoriteType(), favorite.getTargetId());
             return favorite;
@@ -155,6 +165,9 @@ public class FavoriteServiceImpl implements FavoriteService {
 
         int result = favoriteMapper.updateById(existingFavorite);
         if (result > 0) {
+            // 更新目标对象的收藏统计 -1
+            updateTargetFavoriteCount(favoriteType, targetId, -1);
+            
             log.info("移除收藏成功: userId={}, favoriteType={}, targetId={}, operatorId={}",
                     userId, favoriteType, targetId, operatorId);
             return true;
@@ -518,6 +531,9 @@ public class FavoriteServiceImpl implements FavoriteService {
             boolean success = result > 0;
 
             if (success) {
+                // 更新目标对象的收藏统计 +1
+                updateTargetFavoriteCount(favoriteType, targetId, 1);
+                
                 log.info("收藏重新激活成功: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId);
             } else {
                 log.warn("收藏重新激活失败: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId);
@@ -997,6 +1013,43 @@ public class FavoriteServiceImpl implements FavoriteService {
         }
         
         return resultMap;
+    }
+
+    /**
+     * 根据收藏类型更新对应目标的收藏统计
+     * 
+     * @param favoriteType 收藏类型：CONTENT、GOODS
+     * @param targetId 目标对象ID
+     * @param increment 增量（正数增加，负数减少）
+     */
+    private void updateTargetFavoriteCount(String favoriteType, Long targetId, int increment) {
+        if (!StringUtils.hasText(favoriteType) || targetId == null) {
+            log.warn("无效的收藏类型或目标ID: favoriteType={}, targetId={}", favoriteType, targetId);
+            return;
+        }
+        
+        try {
+            switch (favoriteType.toUpperCase()) {
+                case "CONTENT":
+                    contentMapper.incrementFavoriteCount(targetId, increment);
+                    log.info("内容收藏统计更新成功: contentId={}, favoriteCount{}{}", 
+                            targetId, increment > 0 ? "+" : "", increment);
+                    break;
+                    
+                case "GOODS":
+                    goodsMapper.incrementFavoriteCount(targetId, increment);
+                    log.info("商品收藏统计更新成功: goodsId={}, favoriteCount{}{}", 
+                            targetId, increment > 0 ? "+" : "", increment);
+                    break;
+                    
+                default:
+                    log.warn("未知的收藏类型: {}", favoriteType);
+                    break;
+            }
+        } catch (Exception e) {
+            log.error("更新{}收藏统计失败: targetId={}, increment={}", favoriteType, targetId, increment, e);
+            // 统计更新失败不影响主业务流程
+        }
     }
 
     /**

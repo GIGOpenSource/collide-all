@@ -195,6 +195,14 @@
         WHERE id = #{goodsId}
     </update>
 
+    <!-- 增量更新收藏数量 - 使用主键索引 -->
+    <update id="incrementFavoriteCount">
+        UPDATE t_goods
+        SET favorite_count = GREATEST(favorite_count + #{increment}, 0),
+            update_time = NOW()
+        WHERE id = #{goodsId}
+    </update>
+
     <!-- 按类型和状态统计 - 使用索引: idx_type_status_stats -->
     <select id="countByTypeAndStatus" resultType="map">
         SELECT 

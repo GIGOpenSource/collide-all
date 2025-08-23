@@ -119,6 +119,16 @@ public interface GoodsMapper extends BaseMapper<Goods> {
     int increaseViewCount(@Param("goodsId") Long goodsId, @Param("count") Long count);
 
     /**
+     * 增量更新收藏数量
+     * 使用主键索引快速更新
+     *
+     * @param goodsId 商品ID
+     * @param increment 增量（正数增加，负数减少）
+     * @return 影响行数
+     */
+    int incrementFavoriteCount(@Param("goodsId") Long goodsId, @Param("increment") Integer increment);
+
+    /**
      * 扣减库存
      * 使用主键索引快速更新，支持无限库存
      *

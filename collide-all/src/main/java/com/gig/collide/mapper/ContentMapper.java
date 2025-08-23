@@ -123,6 +123,11 @@ public interface ContentMapper extends BaseMapper<Content> {
     int incrementLikeCount(@Param("id") Long id, @Param("increment") Integer increment);
 
     /**
+     * 增量更新收藏数量
+     */
+    int incrementFavoriteCount(@Param("id") Long id, @Param("increment") Integer increment);
+
+    /**
      * 批量更新状态
      */
     int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
