@@ -9,6 +9,9 @@ import com.gig.collide.Apientry.api.like.response.LikeResponse;
 import com.gig.collide.domain.Like;
 import com.gig.collide.mapper.LikeMapper;
 import com.gig.collide.mapper.UserMapper;
+import com.gig.collide.mapper.ContentMapper;
+import com.gig.collide.mapper.SocialDynamicMapper;
+import com.gig.collide.mapper.CommentMapper;
 import com.gig.collide.service.LikeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +48,9 @@ public class LikeServiceImpl implements LikeService {
 
     private final LikeMapper likeMapper;
     private final UserMapper userMapper;
+    private final ContentMapper contentMapper;
+    private final SocialDynamicMapper socialDynamicMapper;
+    private final CommentMapper commentMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -88,6 +94,9 @@ public class LikeServiceImpl implements LikeService {
                     }
                 }
                 
+                // 更新内容本身的点赞统计 +1
+                updateTargetLikeCount(existingLike.getLikeType(), existingLike.getTargetId(), 1);
+                
                 log.info("重新激活点赞记录: id={}", existingLike.getId());
                 return existingLike;
             }
@@ -110,6 +119,9 @@ public class LikeServiceImpl implements LikeService {
                     // 统计更新失败不影响主业务
                 }
             }
+            
+            // 更新内容本身的点赞统计 +1
+            updateTargetLikeCount(like.getLikeType(), like.getTargetId(), 1);
             
             log.info("创建点赞记录成功: id={}", like.getId());
             return like;
@@ -146,6 +158,9 @@ public class LikeServiceImpl implements LikeService {
                     // 统计更新失败不影响主业务
                 }
             }
+            
+            // 更新内容本身的点赞统计 -1
+            updateTargetLikeCount(existingLike.getLikeType(), existingLike.getTargetId(), -1);
             
             log.info("取消点赞成功: id={}", existingLike.getId());
             return true;
@@ -549,5 +564,52 @@ public class LikeServiceImpl implements LikeService {
         response.setUpdateTime(like.getUpdateTime());
 
         return response;
+    }
+
+    /**
+     * 根据点赞类型更新对应内容的点赞统计
+     * 
+     * @param likeType 点赞类型：CONTENT、DYNAMIC、COMMENT
+     * @param targetId 目标对象ID
+     * @param increment 增量（正数增加，负数减少）
+     */
+    private void updateTargetLikeCount(String likeType, Long targetId, int increment) {
+        if (!StringUtils.hasText(likeType) || targetId == null) {
+            log.warn("无效的点赞类型或目标ID: likeType={}, targetId={}", likeType, targetId);
+            return;
+        }
+        
+        try {
+            switch (likeType.toUpperCase()) {
+                case "CONTENT":
+                    contentMapper.incrementLikeCount(targetId, increment);
+                    log.info("内容点赞统计更新成功: contentId={}, likeCount{}{}", 
+                            targetId, increment > 0 ? "+" : "", increment);
+                    break;
+                    
+                case "DYNAMIC":
+                    if (increment > 0) {
+                        socialDynamicMapper.increaseLikeCount(targetId);
+                    } else {
+                        socialDynamicMapper.decreaseLikeCount(targetId);
+                    }
+                    log.info("动态点赞统计更新成功: dynamicId={}, likeCount{}{}", 
+                            targetId, increment > 0 ? "+" : "", increment);
+                    break;
+                    
+                case "COMMENT":
+                    commentMapper.increaseLikeCount(targetId, increment);
+                    log.info("评论点赞统计更新成功: commentId={}, likeCount{}{}", 
+                            targetId, increment > 0 ? "+" : "", increment);
+                    break;
+                    
+                default:
+                    log.warn("未知的点赞类型: {}", likeType);
+                    break;
+            }
+        } catch (Exception e) {
+            log.error("更新{}点赞统计失败: targetId={}, increment={}", likeType, targetId, increment, e);
+            // 统计更新失败不影响主业务流程
+        }
     }
 }
