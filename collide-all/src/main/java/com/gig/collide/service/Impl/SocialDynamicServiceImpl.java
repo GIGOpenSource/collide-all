@@ -224,7 +224,7 @@ public class SocialDynamicServiceImpl implements SocialDynamicService {
             return 0; // 返回0表示重复点赞
         }
         
-        // 先创建点赞记录
+        // 创建点赞记录（LikeService会自动处理统计更新）
         Like like = new Like();
         like.setUserId(operatorId);
         like.setLikeType("DYNAMIC");
@@ -238,21 +238,14 @@ public class SocialDynamicServiceImpl implements SocialDynamicService {
             like.setTargetAuthorId(dynamic.getUserId());
         }
         
-        // 添加点赞记录
+        // 添加点赞记录（会自动更新动态点赞统计和用户点赞统计）
         Like savedLike = likeService.addLike(like);
-        if (savedLike == null) {
+        if (savedLike != null) {
+            log.info("点赞成功: 动态ID={}, 操作者ID={}, 点赞记录ID={}", dynamicId, operatorId, savedLike.getId());
+            return 1; // 返回1表示点赞成功
+        } else {
             log.error("创建点赞记录失败: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
             throw new RuntimeException("创建点赞记录失败");
-        }
-        
-        // 增加动态表中的点赞数
-        int result = socialDynamicMapper.increaseLikeCount(dynamicId);
-        if (result > 0) {
-            log.info("点赞数增加成功: 动态ID={}, 操作者ID={}, 点赞记录ID={}", dynamicId, operatorId, savedLike.getId());
-            return result;
-        } else {
-            log.error("增加动态点赞数失败: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
-            throw new RuntimeException("增加动态点赞数失败");
         }
     }
 
@@ -268,21 +261,14 @@ public class SocialDynamicServiceImpl implements SocialDynamicService {
             return 0; // 返回0表示未点赞，无法取消
         }
         
-        // 取消点赞记录
+        // 取消点赞记录（LikeService会自动处理统计更新）
         boolean likeDeleted = likeService.cancelLike(operatorId, "DYNAMIC", dynamicId);
-        if (!likeDeleted) {
+        if (likeDeleted) {
+            log.info("取消点赞成功: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
+            return 1; // 返回1表示取消点赞成功
+        } else {
             log.error("取消点赞记录失败: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
             throw new RuntimeException("取消点赞记录失败");
-        }
-        
-        // 减少动态表中的点赞数
-        int result = socialDynamicMapper.decreaseLikeCount(dynamicId);
-        if (result > 0) {
-            log.info("点赞数减少成功: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
-            return result;
-        } else {
-            log.error("减少动态点赞数失败: 动态ID={}, 操作者ID={}", dynamicId, operatorId);
-            throw new RuntimeException("减少动态点赞数失败");
         }
     }
 

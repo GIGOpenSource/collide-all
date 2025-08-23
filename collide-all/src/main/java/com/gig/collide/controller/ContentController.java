@@ -369,7 +369,7 @@ public class ContentController {
     
     /**
      * 批量查询用户对内容的互动状态
-     * 优化性能，减少数据库查询次数
+     * 使用真正的批量查询优化性能，减少数据库查询次数
      */
     private void batchSetInteractionStatus(List<ContentResponse> responses, Long userId) {
         if (userId == null || responses == null || responses.isEmpty()) {
@@ -388,50 +388,64 @@ public class ContentController {
                     .distinct()
                     .collect(Collectors.toList());
             
-            // 批量查询点赞状态
+            log.debug("批量查询互动状态: userId={}, contentIds={}, authorIds={}", 
+                    userId, contentIds.size(), authorIds.size());
+            
+            // 真正的批量查询点赞状态（1次查询替代N次）
             Map<Long, Boolean> likeStatusMap = new HashMap<>();
-            for (Long contentId : contentIds) {
-                try {
-                    boolean isLiked = likeService.checkLikeStatus(userId, "CONTENT", contentId);
-                    likeStatusMap.put(contentId, isLiked);
-                } catch (Exception e) {
-                    log.warn("查询点赞状态失败: userId={}, contentId={}", userId, contentId, e);
-                    likeStatusMap.put(contentId, false);
-                }
+            try {
+                likeStatusMap = likeService.batchCheckLikeStatus(userId, "CONTENT", contentIds);
+                log.debug("批量点赞状态查询成功: userId={}, resultSize={}", userId, likeStatusMap.size());
+            } catch (Exception e) {
+                log.warn("批量点赞状态查询失败: userId={}, error={}", userId, e.getMessage(), e);
+                // 创建默认false的map，过滤null值
+                likeStatusMap = contentIds.stream()
+                        .filter(id -> id != null)
+                        .collect(Collectors.toMap(id -> id, id -> false));
             }
             
-            // 批量查询收藏状态
+            // 真正的批量查询收藏状态（1次查询替代N次）
             Map<Long, Boolean> favoriteStatusMap = new HashMap<>();
-            for (Long contentId : contentIds) {
-                try {
-                    boolean isFavorited = favoriteService.checkFavoriteStatus(userId, "CONTENT", contentId);
-                    favoriteStatusMap.put(contentId, isFavorited);
-                } catch (Exception e) {
-                    log.warn("查询收藏状态失败: userId={}, contentId={}", userId, contentId, e);
-                    favoriteStatusMap.put(contentId, false);
-                }
+            try {
+                favoriteStatusMap = favoriteService.batchCheckFavoriteStatus(userId, "CONTENT", contentIds);
+                log.debug("批量收藏状态查询成功: userId={}, resultSize={}", userId, favoriteStatusMap.size());
+            } catch (Exception e) {
+                log.warn("批量收藏状态查询失败: userId={}, error={}", userId, e.getMessage(), e);
+                // 创建默认false的map，过滤null值
+                favoriteStatusMap = contentIds.stream()
+                        .filter(id -> id != null)
+                        .collect(Collectors.toMap(id -> id, id -> false));
             }
             
-            // 批量查询关注状态
+            // 真正的批量查询关注状态（1次查询替代N次）
             Map<Long, Boolean> followStatusMap = new HashMap<>();
-            for (Long authorId : authorIds) {
-                try {
-                    boolean isFollowed = followService.checkFollowStatus(userId, authorId);
-                    followStatusMap.put(authorId, isFollowed);
-                } catch (Exception e) {
-                    log.warn("查询关注状态失败: userId={}, authorId={}", userId, authorId, e);
-                    followStatusMap.put(authorId, false);
-                }
+            try {
+                followStatusMap = followService.batchCheckFollowStatus(userId, authorIds);
+                log.debug("批量关注状态查询成功: userId={}, resultSize={}", userId, followStatusMap.size());
+            } catch (Exception e) {
+                log.warn("批量关注状态查询失败: userId={}, error={}", userId, e.getMessage(), e);
+                // 创建默认false的map，过滤null值
+                followStatusMap = authorIds.stream()
+                        .filter(id -> id != null)
+                        .collect(Collectors.toMap(id -> id, id -> false));
             }
             
-            // 设置互动状态
+            // 创建final副本供lambda使用
+            final Map<Long, Boolean> finalLikeStatusMap = likeStatusMap;
+            final Map<Long, Boolean> finalFavoriteStatusMap = favoriteStatusMap;
+            final Map<Long, Boolean> finalFollowStatusMap = followStatusMap;
+            
+            // 设置互动状态，添加null检查
             responses.forEach(response -> {
-                response.setIsLiked(likeStatusMap.getOrDefault(response.getId(), false));
-                response.setIsFavorited(favoriteStatusMap.getOrDefault(response.getId(), false));
-                response.setIsFollowed(followStatusMap.getOrDefault(response.getAuthorId(), false));
+                Long contentId = response.getId();
+                Long authorId = response.getAuthorId();
+                
+                response.setIsLiked(contentId != null ? finalLikeStatusMap.getOrDefault(contentId, false) : false);
+                response.setIsFavorited(contentId != null ? finalFavoriteStatusMap.getOrDefault(contentId, false) : false);
+                response.setIsFollowed(authorId != null ? finalFollowStatusMap.getOrDefault(authorId, false) : false);
             });
             
-            log.debug("批量设置用户互动状态完成: userId={}, contentCount={}", userId, responses.size());
+            log.debug("批量设置用户互动状态完成: userId={}, contentCount={}, queries=3", userId, responses.size());
             
         } catch (Exception e) {
             log.error("批量查询用户互动状态失败: userId={}", userId, e);
