@@ -597,9 +597,9 @@ public class MessageServiceImpl implements MessageService {
             // 调用Mapper查询
             IPage<Message> messagePage = messageMapper.selectMessageList(page, senderId, receiverId, messageType, status, isRead, keyword, orderBy, orderDirection);
             
-            // 转换为Response对象
+            // 转换为Response对象，包含用户信息
             List<MessageResponse> responses = messagePage.getRecords().stream()
-                    .map(this::convertToResponse)
+                    .map(this::convertToResponseWithUserInfo)
                     .toList();
             
             // 新增逻辑：将相同发送者和接收者的消息合并为对话数组
@@ -626,9 +626,10 @@ public class MessageServiceImpl implements MessageService {
     /**
      * 将相同发送者和接收者的消息合并为对话数组
      * A为发送者，B为接收者，将两者的对话（相同的发送者和接收者）合并为一个数组
+     * 修改：只返回每个对话的最新一条消息
      * 
      * @param messages 原始消息列表
-     * @return 合并后的对话数组
+     * @return 合并后的对话数组（每个对话只保留最新一条消息）
      */
     private List<MessageResponse> mergeConversations(List<MessageResponse> messages) {
         if (messages == null || messages.isEmpty()) {
@@ -637,42 +638,32 @@ public class MessageServiceImpl implements MessageService {
         
         log.debug("开始合并对话，原始消息数量: {}", messages.size());
         
-        // 使用Map来分组相同发送者和接收者的消息
-        Map<String, List<MessageResponse>> conversationGroups = new HashMap<>();
+        // 使用Map来分组相同发送者和接收者的消息，只保留每个对话的最新一条消息
+        Map<String, MessageResponse> conversationLatestMessages = new HashMap<>();
         
         for (MessageResponse message : messages) {
             // 创建对话键：确保发送者和接收者的顺序一致（较小的ID在前）
             String conversationKey = createConversationKey(message.getSenderId(), message.getReceiverId());
             
-            conversationGroups.computeIfAbsent(conversationKey, k -> new ArrayList<>()).add(message);
-        }
-        
-        // 将每个对话组内的消息按时间排序，并合并为一个对话数组
-        List<MessageResponse> mergedConversations = new ArrayList<>();
-        
-        for (List<MessageResponse> conversation : conversationGroups.values()) {
-            // 按创建时间排序（正序，最新的在最后）
-            List<MessageResponse> sortedConversation = conversation.stream()
-                    .sorted((m1, m2) -> {
-                        if (m1.getCreateTime() == null && m2.getCreateTime() == null) {
-                            return 0;
-                        }
-                        if (m1.getCreateTime() == null) {
-                            return 1; // null值排在后面
-                        }
-                        if (m2.getCreateTime() == null) {
-                            return -1;
-                        }
-                        return m1.getCreateTime().compareTo(m2.getCreateTime()); // 正序
-                    })
-                    .toList();
+            // 检查是否已有该对话的消息，如果有则比较时间，保留最新的
+            MessageResponse existingMessage = conversationLatestMessages.get(conversationKey);
             
-            // 将排序后的对话添加到结果中
-            mergedConversations.addAll(sortedConversation);
+            if (existingMessage == null) {
+                // 如果该对话还没有消息，直接添加
+                conversationLatestMessages.put(conversationKey, message);
+            } else {
+                // 比较时间，保留最新的消息
+                if (isMessageNewer(message, existingMessage)) {
+                    conversationLatestMessages.put(conversationKey, message);
+                }
+            }
         }
+        
+        // 将每个对话的最新消息转换为列表，并按时间倒序排序
+        List<MessageResponse> latestMessages = new ArrayList<>(conversationLatestMessages.values());
         
         // 按最新消息时间倒序排序对话组
-        mergedConversations.sort((m1, m2) -> {
+        latestMessages.sort((m1, m2) -> {
             if (m1.getCreateTime() == null && m2.getCreateTime() == null) {
                 return 0;
             }
@@ -685,8 +676,28 @@ public class MessageServiceImpl implements MessageService {
             return m2.getCreateTime().compareTo(m1.getCreateTime()); // 倒序，最新的对话在前
         });
         
-        log.debug("对话合并完成，合并后消息数量: {}", mergedConversations.size());
-        return mergedConversations;
+        log.debug("对话合并完成，原始消息数量: {}，合并后对话数量: {}", messages.size(), latestMessages.size());
+        return latestMessages;
+    }
+    
+    /**
+     * 比较两条消息哪个更新
+     * 
+     * @param message1 消息1
+     * @param message2 消息2
+     * @return 如果消息1比消息2新，返回true
+     */
+    private boolean isMessageNewer(MessageResponse message1, MessageResponse message2) {
+        if (message1.getCreateTime() == null && message2.getCreateTime() == null) {
+            return false; // 两个都为null，认为不更新
+        }
+        if (message1.getCreateTime() == null) {
+            return false; // message1时间为null，认为message2更新
+        }
+        if (message2.getCreateTime() == null) {
+            return true; // message2时间为null，认为message1更新
+        }
+        return message1.getCreateTime().isAfter(message2.getCreateTime());
     }
     
     /**

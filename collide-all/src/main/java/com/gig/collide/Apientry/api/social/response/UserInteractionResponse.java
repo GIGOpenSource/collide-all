@@ -49,12 +49,12 @@ public class UserInteractionResponse implements Serializable {
     /**
      * 目标对象标题
      */
-    private String title;
+    private String targetTitle;
 
     /**
      * 目标对象作者ID
      */
-    private Long authorId;
+    private Long targetAuthorId;
 
     /**
      * 目标对象作者昵称
