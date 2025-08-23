@@ -135,7 +135,7 @@ public class AuthController {
             
             Long userId = StpUtil.getLoginIdAsLong();
             User user = userService.getUserById(userId);
-            
+
             if (user == null) {
                 return Result.error("用户不存在");
             }
